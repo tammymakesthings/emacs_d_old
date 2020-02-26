@@ -1,8 +1,6 @@
-
-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-02-26 15:01:30 tammy.cravit>
+#+DATE: Time-stamp: <2020-02-26 15:03:11 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}

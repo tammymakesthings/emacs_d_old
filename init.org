@@ -1,7 +1,8 @@
 
+
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-02-26 11:47:05 tammy.cravit>
+#+DATE: Time-stamp: <2020-02-26 14:38:28 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1051,17 +1052,28 @@ Load org-babel (code) extensions for languages we use.
 
 #+BEGIN_SRC emacs-lisp
   (require 'ob-core)
-  (require 'ob-dot)
-  (require 'ob-emacs-lisp)
   (require 'ob-eval)
-  (require 'ob-js)
-  (require 'ob-python)
-  (require 'ob-ruby)
-  (require 'ob-shell)
-  (require 'ob-arduino)
-  (require 'ob-clojure)
-  (require 'ob-clojure-literate)
-  (require 'ob-spice)
+
+  (org-babel-do-load-languages
+    'org-babel-load-languages
+    '((dot . t) 
+      (emacs-lisp . t) 
+      (js . t) 
+      (python . t)
+      (ruby . t) 
+      (shell . t) 
+      (arduino . t)
+      (forth . t) 
+      (latex . t) 
+      (perl . t)
+      (eshell . t) 
+      (gnuplot . t) 
+      (clojure . t) 
+      (clojure-literate . t) 
+      (spice . t)
+      (sql . t)
+     )
+    )
 #+END_SRC
 
 Since version 8, Org uses a modular exporter. Load the exporter pieces

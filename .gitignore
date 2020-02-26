@@ -13,3 +13,4 @@ vendor/**
 .smex-items
 org-clock-save.el
 projectile-bookmarks.eld
+ido.last

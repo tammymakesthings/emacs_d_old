@@ -2,7 +2,7 @@
 
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-02-26 14:38:28 tammy.cravit>
+#+DATE: Time-stamp: <2020-02-26 15:01:30 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1428,6 +1428,24 @@ Define font faces for todo keyword states.
                 ("CANCELED" :foreground "forest green" :weight bold))))
 #+END_SRC
 
+***** Org Source Color Theme
+
+Change the coloring of org code blocks.
+
+#+BEGIN_SRC emacs-lisp
+(defface org-block-begin-line
+  '((t (:underline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF")))
+  "Face used for the line delimiting the begin of source blocks.")
+
+(defface org-block-background
+  '((t (:background "#FFFFEA")))
+  "Face used for the source block background.")
+
+(defface org-block-end-line
+  '((t (:overline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF")))
+  "Face used for the line delimiting the end of source blocks.")
+#+END_SRC
+
 ***** Org Property Settings
 
 Enable property inheritance.
@@ -2018,8 +2036,9 @@ Set key bindings for the org file skeletons.
 #+END_SRC
 
 Define helpers for jumping beteen skeleton markers. Markere are
-defined by including =@= characters in the skeletons. This came from [[;; From
- https://www.emacswiki.org/emacs/SkeletonMode][here]].
+defined by including =@= characters in the skeletons. 
+
+This came from [[https://www.emacswiki.org/emacs/SkeletonMode][here]].
 
 #+BEGIN_SRC emacs-lisp
   (defvar *skeleton-markers* nil "Markers for locations saved in skeleton-positions")

@@ -1,6 +1,7 @@
 
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
+#+DATE: Time-stamp: <2020-02-26 11:47:05 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -9,8 +10,18 @@
 
 * About
   
+This is my Emacs configuration. it is designed to be as platform
+agnostic as possible, and is tangled into an [[https://orgmode.org/][org]] file with
+documentation. The =init.el= file in the repo (copied as
+=init.el.firstrun=) takes care of detangling and generating the
+=init.el= file that is actually loaded by Emacs.
+
+ More details about the detangling process are [[*Meta - Detangling][here]].
+
+ The master source for this file is [[https://github.com/tammymakesthings/emacs_d][here]].
+
 * Configuration
-*** Meta
+*** Meta - Detangling
 
 All changes to the configuration should be done in =init.org=, *not* in
 =init.el=. Any changes in the =init.el= will be overwritten by saving
@@ -21,9 +32,8 @@ to =~/.emacs.d=).
 Emacs can't load =.org=-files directly, but =org-mode= provides functions
 to extract the code blocks and write them to a file. There are multiple
 ways of handling this; like suggested by [[http://emacs.stackexchange.com/questions/3143/can-i-use-org-mode-to-structure-my-emacs-or-other-el-configuration-file][this StackOverflow post]], one
-could just use =org-babel-load-file=, but I had problems with
-byte-compilation. Previously I tracked both the =org.=- and =el.=-files,
-but the git commits got a little messy. So here is a new approach.
+could just use =org-babel-load-file=, but there are problems with
+byte-compilation. 
 
 When this configuration is loaded for the first time, the ~init.el~ is
 the file that is loaded. It looks like this:
@@ -65,6 +75,18 @@ header. The first line of the configuration is as follows:
 
    #+BEGIN_SRC emacs-lisp
    ;;; -*- lexical-binding: t -*-
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   ;;;; Emacs Configuration - Tammy Cravit
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   ;;;; THIS FILE IS AUTO-GENERATED FROM init.org AND IS REGENERATED EVERY TIME
+   ;;;; THAT FILE IS SAVED. DO NOT MAKE ANY MODIFICATIONS TO THIS FILE, OR THEY
+   ;;;; WILL BE LOST WHEN THE SOURCE ORG FILE IS CHANGED!
+   ;;;;
+   ;;;; The latest version of the source org file can be found at:
+   ;;;;
+   ;;;;     https://github.com/tammymakesthings/emacs_d
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
    #+END_SRC
 
 The =init.el= should (after the first run) mirror the source blocks in
@@ -102,6 +124,15 @@ exists after the init-file has loaded.
          (load-file private-file)))))
 #+END_SRC
 
+*** Meta - Assumptions
+
+This configuration is written to be as platform-agnostic as I can make
+it. However, I do make the following assumptions:
+
+1. You're using [[https://ftp.gnu.org/gnu/emacs/][Emacs]] 26. This will *not* work correctly with previous
+   versions of Emacs because of the =posframe= library's dependencies.
+2. You have [[https://git-scm.com/][Git]] installed, and the =git= executable is in your path.
+
 *** Preliminaries
 
 On Windows, Emacs starts up in the wrong directory. Fix that before we
@@ -109,7 +140,7 @@ get too much farther.
 
 #+BEGIN_SRC emacs-lisp
   ; Set the working directory sensibly on Windows.
-  (if (and (eq system-type 'windows) (getenv "HOME") (file-directory-p (getenv "HOME")))
+  (if (and (eq system-type 'windows-nt) (getenv "HOME") (file-directory-p (getenv "HOME")))
       (cd (getenv "HOME")))
 #+END_SRC
 
@@ -149,6 +180,7 @@ Load the packaging system and set up repositories.
                           ("gnu"          . "http://elpa.gnu.org/packages/")
                           ("melpa"        . "http://melpa.milkbox.net/packages/")
                           ("melpa-stable" . "http://stable.melpa.org/packages/")))
+  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
   (add-to-list 'package-pinned-packages '(cider              . "melpa-stable") t)
   (add-to-list 'package-pinned-packages '(magit              . "melpa-stable") t)
 #+END_SRC
@@ -237,8 +269,6 @@ And, now we're ready to install packages.
   (dolist (p my-packages)
     (when (not (package-installed-p p))
       (package-install p)))
-
-  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
 #+END_SRC
 
 We'll set up =~/.emacs.d/vendor= as a place to store locally-installed
@@ -328,31 +358,17 @@ http://www.emacswiki.org/emacs/InteractivelyDoThings
 
 #+BEGIN_SRC emacs-lisp tangle:no
   (ido-mode t)
-
-  ;; This allows partial matches, e.g. "tl" will match "Tyrion Lannister"
   (setq ido-enable-flex-matching t)
-
-  ;; Turn this behavior off because it's annoying
   (setq ido-use-filename-at-point nil)
-
-  ;; Don't try to match file across all "work" directories; only match files
-  ;; in the current directory displayed in the minibuffer
   (setq ido-auto-merge-work-directories-length -1)
-
-  ;; Includes buffer names of recently open files, even if they're not
-  ;; open now
   (setq ido-use-virtual-buffers t)
-
-  ;; This enables ido in all contexts where it could be useful, not just
-  ;; for selecting buffer and file names
   (ido-ubiquitous-mode t)
   (ido-everywhere t)
 #+END_SRC
 
 ***** Key Binding - Buffer List
 
-#+BEGIN_SRC emacs-lisp tangle:no
-;; Shows a list of buffers
+#+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 #+END_SRC
 
@@ -458,6 +474,15 @@ Increase the font size for better readability.
 
 This is a whole lot of code to select a good font based on what's
 available on the system.
+
+Fonts we check for, in order:
+
+1. [[https://www.jetbrains.com/lp/mono/][JetBrains Mono]]
+2. [[https://github.com/microsoft/cascadia-code/releases][Cascadia Code PL]]
+3. [[https://github.com/adobe-fonts/source-code-pro][Source Code Pro]]
+4. [[https://github.com/tonsky/FiraCode][Fira Code]]
+
+The first one of these that's found will be used.
 
 #+BEGIN_SRC emacs-lisp
   ;; Select a good UI font
@@ -626,6 +651,13 @@ Don't use hard tabs.
     (keyboard-quit))
 #+END_SRC
 
+Bind the F7 key to execute ~eval-region~ since I do this a lot when
+I'm testing code.
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "<f7>") 'eval-region)
+#+END_SRC
+
 Enable saving of your place in files you edit. See [[http://www.emacswiki.org/emacs/SavePlace][here]] for details.
 
 #+BEGIN_SRC emacs-lisp
@@ -675,7 +707,7 @@ Disable electric indent.
 (setq electric-indent-mode nil)
 #+END_SRC
 
-Enable the Emacs timestamp feature. When this feature is active, the
+Enable the Emacs [[https://www.emacswiki.org/emacs/TimeStamp][timestamp]] feature. When this feature is active, the
 text =Time-stamp: <>= within the first 8 lines of your file will be
 automatically updated to the current time whenever the file is saved.
 
@@ -715,6 +747,9 @@ By default, C-s runs =isearch-forward=, so this swaps the bindings.
 #+END_SRC
 
 *** Programming Languages
+
+Load and configure modes for various programming languages.
+
 ***** Shell Scripts
 
 #+BEGIN_SRC emacs-lisp
@@ -855,13 +890,15 @@ CamelCasedTokens such as Java class names.
 Setup the Python imenu.
 
 #+BEGIN_SRC emacs-lisp
-;; Python mode
 (defun my-merge-imenu ()
   (interactive)
   (let ((mode-imenu (imenu-default-create-index-function))
         (custom-imenu (imenu--generic-function imenu-generic-expression)))
     (append mode-imenu custom-imenu)))
+#+END_SRC
 
+Define our =python-mode= hooks and key bindings.
+#+BEGIN_SRC emacs-lisp
 (defun my-python-hooks()
     (interactive)
     (setq tab-width     4
@@ -967,7 +1004,7 @@ Emacs smalltalk-mode customizations.
   (add-to-list 'auto-mode-alist '("\\.yml$" . yaml-mode))
 #+END_SRC
 
-*** Gnus configuration
+*** Gnus
 
 *** Org Mode
 
@@ -1005,14 +1042,6 @@ We load =org-mode= from our =vendor/= tree.
                 org-w3m
                 )))
   (require 'org-element)
-
-  (unless (fboundp 'org-element-update-syntax)
-  (defun org-element-update-syntax ()
-    "Update parser internals."
-    (interactive)
-    (org-element--set-regexps)
-    (org-element-cache-reset 'all)))
-
   (require 'org-datetree)
   (require 'org-protocol)
   (require 'org-inlinetask)
@@ -1029,10 +1058,10 @@ Load org-babel (code) extensions for languages we use.
   (require 'ob-python)
   (require 'ob-ruby)
   (require 'ob-shell)
-;  (require 'ob-arduino)
+  (require 'ob-arduino)
   (require 'ob-clojure)
-;  (require 'ob-clojure-literate)
-;  (require 'ob-spice)
+  (require 'ob-clojure-literate)
+  (require 'ob-spice)
 #+END_SRC
 
 Since version 8, Org uses a modular exporter. Load the exporter pieces
@@ -2297,6 +2326,9 @@ this project.
       ))
 #+END_SRC
       
+
+*** LaTeX editing
+
 *** Gnu Server 
 
 Make sure the Gnu server is started if it's available.
@@ -2382,4 +2414,3 @@ refactored out to somewhere else.
    ;; If there is more than one, they won't work right.
    )
 #+END_SRC
-

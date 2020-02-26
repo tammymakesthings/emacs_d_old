@@ -1,11 +1,15 @@
-# Compiled
 *.elc
-
-# Packaging
 .cask
-
-# Backup files
 *~
-
-# Undo-tree save-files
 *.~undo-tree
+auto-save-list/**
+backups/**
+elpa/**
+server/**
+themes/**
+transient/**
+vendor/**
+.recentf
+.smex-items
+org-clock-save.el
+projectile-bookmarks.eld

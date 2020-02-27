@@ -1,6 +1,7 @@
+# -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-02-26 15:03:11 tammy.cravit>
+#+DATE: Time-stamp: <2020-02-27 09:42:42 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -15,12 +16,29 @@ documentation. The =init.el= file in the repo (copied as
 =init.el.firstrun=) takes care of detangling and generating the
 =init.el= file that is actually loaded by Emacs.
 
- More details about the detangling process are [[*Meta - Detangling][here]].
+More details about the detangling process are [[*Meta - Detangling][here]].
 
- The master source for this file is [[https://github.com/tammymakesthings/emacs_d][here]].
+The master source for this file is [[https://github.com/tammymakesthings/emacs_d][here]].
 
-* Configuration
-*** Meta - Detangling
+* Lisp File Header
+
+ #+begin_src emacs-lisp
+   ;;; -*- mode: emacs-lisp; lexical-binding: t -*-
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   ;;;; Emacs Configuration - Tammy Cravit
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   ;;;; THIS FILE IS AUTO-GENERATED FROM init.org AND IS REGENERATED EVERY TIME
+   ;;;; THAT FILE IS SAVED. DO NOT MAKE ANY MODIFICATIONS TO THIS FILE, OR THEY
+   ;;;; WILL BE LOST WHEN THE SOURCE ORG FILE IS CHANGED!
+   ;;;;
+   ;;;; The latest version of the source org file can be found at:
+   ;;;;
+   ;;;;     https://github.com/tammymakesthings/emacs_d
+   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ #+end_src
+
+* Detangling
 
 All changes to the configuration should be done in =init.org=, *not* in
 =init.el=. Any changes in the =init.el= will be overwritten by saving
@@ -37,20 +55,20 @@ byte-compilation.
 When this configuration is loaded for the first time, the ~init.el~ is
 the file that is loaded. It looks like this:
 
-   #+BEGIN_SRC emacs-lisp :tangle no
-     ;; This file replaces itself with the actual configuration at first run.
+#+begin_src emacs-lisp :tangle no
+  ;; This file replaces itself with the actual configuration at first run.
 
-     ;; We can't tangle without org!
-     (require 'org)
-     ;; Open the configuration
-     (find-file (concat user-emacs-directory "init.org"))
-     ;; tangle it
-     (org-babel-tangle)
-     ;; load it
-     (load-file (concat user-emacs-directory "init.el"))
-     ;; finally byte-compile it
-     (byte-compile-file (concat user-emacs-directory "init.el"))
-   #+END_SRC
+  ;; We can't tangle without org!
+  (require 'org)
+  ;; Open the configuration
+  (find-file (concat user-emacs-directory "init.org"))
+  ;; tangle it
+  (org-babel-tangle)
+  ;; load it
+  (load-file (concat user-emacs-directory "init.el"))
+  ;; finally byte-compile it
+  (byte-compile-file (concat user-emacs-directory "init.el"))
+   #+end_src
 
 It tangles the org-file, so that this file is overwritten with the actual
 configuration.
@@ -58,35 +76,16 @@ configuration.
 There is no reason to track the =init.el= that is generated; by running
 the following command =git= will not bother tracking it:
 
-   #+BEGIN_SRC sh :tangle no
-     git update-index --assume-unchanged init.el
-   #+END_SRC
+#+begin_src sh :tangle no
+  git update-index --assume-unchanged init.el
+#+end_src
    
 If one wishes to make changes to the repo-version of =init.el= start
 tracking again with:
 
-   #+BEGIN_SRC sh :tangle no
-     git update-index --no-assume-unchanged init.el
-   #+END_SRC
-
-I want lexical scoping for the init-file, which can be specified in the
-header. The first line of the configuration is as follows:
-
-   #+BEGIN_SRC emacs-lisp
-   ;;; -*- lexical-binding: t -*-
-   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-   ;;;; Emacs Configuration - Tammy Cravit
-   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-   ;;;; THIS FILE IS AUTO-GENERATED FROM init.org AND IS REGENERATED EVERY TIME
-   ;;;; THAT FILE IS SAVED. DO NOT MAKE ANY MODIFICATIONS TO THIS FILE, OR THEY
-   ;;;; WILL BE LOST WHEN THE SOURCE ORG FILE IS CHANGED!
-   ;;;;
-   ;;;; The latest version of the source org file can be found at:
-   ;;;;
-   ;;;;     https://github.com/tammymakesthings/emacs_d
-   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
- 
-   #+END_SRC
+#+begin_src sh :tangle no
+  git update-index --no-assume-unchanged init.el
+#+end_src
 
 The =init.el= should (after the first run) mirror the source blocks in
 the =init.org=. We can use =C-c C-v t= to run =org-babel-tangle=, which
@@ -97,7 +96,7 @@ To avoid doing this each time a change is made we can add a function to
 the =after-save-hook= ensuring to always tangle and byte-compile the
 =org=-document after changes.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun tangle-init ()
     "If the current buffer is 'init.org' the code-blocks are
   tangled, and the tangled file is compiled."
@@ -109,21 +108,21 @@ the =after-save-hook= ensuring to always tangle and byte-compile the
         (byte-compile-file (concat user-emacs-directory "init.el")))))
 
   (add-hook 'after-save-hook 'tangle-init)
-#+END_SRC
+#+end_src
 
 I'd like to keep a few settings private, so we load a =private.el= if it
 exists after the init-file has loaded.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-hook
    'after-init-hook
    (lambda ()
      (let ((private-file (concat user-emacs-directory "private.el")))
        (when (file-exists-p private-file)
          (load-file private-file)))))
-#+END_SRC
+#+end_src
 
-*** Meta - Assumptions
+* Assumptions
 
 This configuration is written to be as platform-agnostic as I can make
 it. However, I do make the following assumptions:
@@ -132,47 +131,49 @@ it. However, I do make the following assumptions:
    versions of Emacs because of the =posframe= library's dependencies.
 2. You have [[https://git-scm.com/][Git]] installed, and the =git= executable is in your path.
 
+* Emacs Configuration
+
 *** Preliminaries
 
 On Windows, Emacs starts up in the wrong directory. Fix that before we
 get too much farther.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ; Set the working directory sensibly on Windows.
   (if (and (eq system-type 'windows-nt) (getenv "HOME") (file-directory-p (getenv "HOME")))
       (cd (getenv "HOME")))
-#+END_SRC
+#+end_src
 
 Set some variables to identify who I am.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq user-full-name "Tammy Cravit")
   (setq user-mail-address "tammymakesthings@gmail.com")
-#+END_SRC
+#+end_src
 
 *** Package Installation
 
 On Windows systems, I've had problems with TLS errors, so disable TLS
 transport on Windows systems.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
-#+END_SRC
+#+end_src
 
 Set TLS settings for installations.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (with-eval-after-load 'gnutls
     (if (or (eq system-type 'windows-nt) (eq system-type 'darwin))
     (setq gnutls-verify-error nil)
     (setq gnutls-min-prime-bits 1024)
     (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.2")
     (add-to-list 'gnutls-trustfiles "/usr/local/etc/libressl/cert.pem")))
-#+END_SRC
+#+end_src
 
 Load the packaging system and set up repositories.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (require 'package)
   (setq package-archives '(
                           ("elpa"         . "http://tromey.com/elpa/")
@@ -182,41 +183,41 @@ Load the packaging system and set up repositories.
   (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
   (add-to-list 'package-pinned-packages '(cider              . "melpa-stable") t)
   (add-to-list 'package-pinned-packages '(magit              . "melpa-stable") t)
-#+END_SRC
+#+end_src
 
 Now we need to activate packages. Do this first so the packages are
 loaded before we attempt to modify them.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (package-initialize)
-#+END_SRC
+#+end_src
 
 Download ELPA package descriptions if necessary.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (when (not package-archive-contents)
     (package-refresh-contents))
-#+END_SRC
+#+end_src
 
 Bootstrap =use-package=. Package signature checks need to be turned
 off for this because TLS is disabled.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq package-check-signature nil)
-#+END_SRC
+#+end_src
 
 Set the package manager loaded and ready.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'use-package))
   (package-install 'quelpa)
-#+END_SRC
+#+end_src
 
 Now let's define the packages we'll need to load from ELPA.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
    ;; The packages you want installed. You can also install these
    ;; manually with M-x package-install
    ;; Add in your own as you wish:
@@ -253,29 +254,29 @@ Now let's define the packages we'll need to load from ELPA.
        dash
        )
      )
-#+END_SRC
+#+end_src
 
 Some extra stuff is needed on MacOS.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (if (eq system-type 'darwin)
      (add-to-list 'my-packages 'exec-path-from-shell))
-#+END_SRC
+#+end_src
 
 And, now we're ready to install packages.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (dolist (p my-packages)
     (when (not (package-installed-p p))
       (package-install p)))
-#+END_SRC
+#+end_src
 
 We'll set up =~/.emacs.d/vendor= as a place to store locally-installed
 packages. You can put stuff there to ensure it's loaded. The helper
 function =tlc/git-clone-to-vendor-dir= clones a git repo into the
 vendor dir if it's not already present.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (unless (file-directory-p (file-truename (concat user-emacs-directory "/vendor")))
     (make-directory (file-truename (concat user-emacs-directory "/vendor"))))
 
@@ -303,7 +304,7 @@ vendor dir if it's not already present.
 
   (add-to-list 'load-path (file-truename (concat user-emacs-directory "/vendor")))
   (add-to-list 'load-path (file-truename (concat user-emacs-directory "/vendor/ts")))
-#+END_SRC
+#+end_src
 
 *** Shell Integration
 
@@ -311,12 +312,12 @@ Set up =exec-path-from-shell= to use the user's PATH environment
 variable. See [[https://github.com/purcell/exec-path-from-shell][https://github.com/purcell/exec-path-from-shell]] for
 details. 
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (when (memq window-system '(mac ns))
     (exec-path-from-shell-initialize)
     (exec-path-from-shell-copy-envs
      '("PATH")))
-#+END_SRC
+#+end_src
 
 *** Navigation
 ***** Uniquify Buffer Names
@@ -329,22 +330,22 @@ directory name at the beginning of the buffer name.
 
 https://www.gnu.org/software/emacs/manual/html_node/emacs/Uniquify.html
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (require 'uniquify)
   (setq uniquify-buffer-name-style 'forward)
-#+END_SRC
+#+end_src
 
 ***** Recent File Mode
 
 Turn on recent file mode so that you can more easily switch to
 recently edited files when you first start emacs. 
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq recentf-save-file (concat user-emacs-directory ".recentf"))
   (require 'recentf)
   (recentf-mode 1)
   (setq recentf-max-menu-items 40)
-#+END_SRC
+#+end_src
 
 ***** Ido Mode 
 =ido-mode= allows you to more easily navigate choices. For example,
@@ -355,7 +356,7 @@ typed in
 
 http://www.emacswiki.org/emacs/InteractivelyDoThings
 
-#+BEGIN_SRC emacs-lisp tangle:no
+#+begin_src emacs-lisp tangle:no
   (ido-mode t)
   (setq ido-enable-flex-matching t)
   (setq ido-use-filename-at-point nil)
@@ -363,13 +364,13 @@ http://www.emacswiki.org/emacs/InteractivelyDoThings
   (setq ido-use-virtual-buffers t)
   (ido-ubiquitous-mode t)
   (ido-everywhere t)
-#+END_SRC
+#+end_src
 
 ***** Key Binding - Buffer List
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (global-set-key (kbd "C-x C-b") 'ibuffer)
-#+END_SRC
+#+end_src
 
 ***** Smex - Easier execution of M-x commands.
 
@@ -378,17 +379,17 @@ a filterable list of possible commands in the minibuffer.
 
 http://www.emacswiki.org/emacs/Smex
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq smex-save-file (concat user-emacs-directory ".smex-items"))
   (smex-initialize)
   (global-set-key (kbd "M-x") 'smex)
-#+END_SRC
+#+end_src
 
 ***** Projectile - Directory Project Management
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (projectile-global-mode)
-#+END_SRC
+#+end_src
 
 *** UI Customizations
 
@@ -398,7 +399,7 @@ some user interface elements.
 I'm used to interacting with Emacs in a terminal, so I don't need a
 lot of the distracting GUI elements.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (when (fboundp 'tool-bar-mode)
     (tool-bar-mode -1))
 
@@ -407,52 +408,52 @@ lot of the distracting GUI elements.
 
   (when (fboundp 'menu-bar-mode)
     (menu-bar-mode -1))
-#+END_SRC
+#+end_src
 
 Disable startup messages.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq inhibit-startup-screen t)
   (setq initial-scratch-message nil)
   (setq inhibit-startup-echo-area-message t)
   (setq inhibit-startup-message t)
-#+END_SRC
+#+end_src
 
 Show the full path in the title bar.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq-default frame-title-format "%b (%f)")
-#+END_SRC
+#+end_src
 
 Disable the font popup menu.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (global-set-key (kbd "s-t") '(lambda () (interactive)))
-#+END_SRC
+#+end_src
 
 Diable the terminal bell.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq ring-bell-function 'ignore)
-#+END_SRC
+#+end_src
 
 ***** Show Line Numbers
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (if (>= emacs-major-version 26)
       (global-display-line-numbers-mode)
     (global-linum-mode))
 
   (setq column-number-mode t)
   (setq line-number-mode t)
-#+END_SRC
+#+end_src
 
 ***** Color Themes/Fonts
 
 Read [[http://batsov.com/articles/2012/02/19/color-theming-in-emacs-reloaded/][this article]] for a great explanation of emacs color themes. A
 much more technical explanation of the theme system can be found [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Custom-Themes.html][here]].
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (unless (file-directory-p "~/.emacs.d/themes")
     (make-directory "~/.emacs.d/themes"))
 
@@ -463,13 +464,13 @@ much more technical explanation of the theme system can be found [[https://www.g
   (require 'hl-line)
   (set-face-attribute 'default nil :height 140)
   (set-face-background hl-line-face "grey20")
-#+END_SRC
+#+end_src
 
 Increase the font size for better readability.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (set-face-attribute 'default nil :height 140)
-#+END_SRC
+#+end_src
 
 This is a whole lot of code to select a good font based on what's
 available on the system.
@@ -483,7 +484,7 @@ Fonts we check for, in order:
 
 The first one of these that's found will be used.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Select a good UI font
   (defvar tlc/frame-font-face nil "Font face for custom-set-faces")
   (defvar tlc/frame-font-size nil "Font size for custom-set-faces")
@@ -520,7 +521,7 @@ The first one of these that's found will be used.
         :load-path "git-lisp/fira-code-mode"
         :custom (fira-code-mode-disabled-ligatures '("[]" "#{" "#(" "#_" "#_(" "x"))
         :hook prog-mode))
-#+END_SRC
+#+end_src
 
 ***** Frame Size/Position
 
@@ -528,7 +529,7 @@ Set the initial window size and position if we're running in a GUI. If
 we only have one monitor (like on an undocked laptop) we'll start the
 window maximized.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (if window-system
       (if (eq (length (display-monitor-attributes-list)) 1)
           ;; One monitor - make the window shorter and mazimize it
@@ -538,11 +539,11 @@ window maximized.
         (setq initial-frame-alist '((top . 15) (left . 15) 
                                     (width . 132) (height . 38))))
     (setq default-frame-alist initial-frame-alist))
-#+END_SRC
+#+end_src
 
 ***** OS kill ring/clipboard integration
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq ;; makes killing/yanking interact with the clipboard
         x-select-enable-clipboard t
 
@@ -561,7 +562,7 @@ window maximized.
 
         ;; Mouse yank commands yank at point instead of at click.
         mouse-yank-at-point t)
-#+END_SRC
+#+end_src
 
 ***** Redefine split-window behavior.
 
@@ -573,7 +574,7 @@ shockingly difficult to change.
 This code comes from [[https://emacs.stackexchange.com/questions/39034/prefer-vertical-splits-over-horizontal-ones][Stack Overflow]], and it forces Emacs to split
 windows vertically unless they're small.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun split-window-sensibly-prefer-horizontal (&optional window)
   "Based on split-window-sensibly, but designed to prefer a horizontal split,
   i.e. windows tiled side-by-side."
@@ -618,28 +619,46 @@ windows vertically unless they're small.
      split-height-threshold 4
      split-width-threshold 40
      split-window-preferred-function 'split-window-really-sensibly)
-#+END_SRC
+#+end_src
 
 *** Editing Customizations
 
 These customizations affect things related to editing files in
 buffers.
 
+Enable a few disabled Emacs commands. Add some [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Advising-Functions.html][advice]] for the
+=upcase-region= and =downcase-region= commands so they only work when
+a region is active. This prevents you from breaking source code by
+activating them inadvertently. (From [[https://www.reddit.com/r/emacs/comments/56qb27/enable_upcasedowncaseregion_but_prevent_accident/][here]]).
+
+#+begin_src emacs-lisp
+  (put 'upcase-region   'disabled nil)
+  (put 'downcase-region 'disabled nil)
+  (put 'eval-expression 'disabled nil)
+
+  (defun ensure-region-active-advice (func &rest args)
+    (when (region-active-p)
+      (apply func args)))
+
+  (advice-add 'upcase-region :around 'ensure-region-active-advice)
+  (advice-add 'downcase-region :around 'ensure-region-active-advice)
+#+end_src
+
 Enable highlighting of matching parens.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (show-paren-mode 1)
-#+END_SRC
+#+end_src
 
 Highlight the current line.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (global-hl-line-mode 1)
-#+END_SRC
+#+end_src
 
 Don't use hard tabs.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq-default indent-tabs-mode nil)
 
   (defun die-tabs ()
@@ -648,27 +667,27 @@ Don't use hard tabs.
     (mark-whole-buffer)
     (untabify (region-beginning) (region-end))
     (keyboard-quit))
-#+END_SRC
+#+end_src
 
 Bind the F7 key to execute ~eval-region~ since I do this a lot when
 I'm testing code.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (global-set-key (kbd "<f7>") 'eval-region)
-#+END_SRC
+#+end_src
 
 Enable saving of your place in files you edit. See [[http://www.emacswiki.org/emacs/SavePlace][here]] for details.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (require 'saveplace)
   (setq-default save-place t)
   (setq save-place-file (concat user-emacs-directory "places"))
-#+END_SRC
+#+end_src
 
 Emacs can automatically create backup files. This tells Emacs to
 put all backups in =~/.emacs.d/backups=. See [[http://www.gnu.org/software/emacs/manual/html_node/elisp/Backup-Files.html][here]] for details.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (unless (file-directory-p (concat user-emacs-directory "backups"))
     (make-directory (concat user-emacs-directory "backups")))
 
@@ -676,21 +695,21 @@ put all backups in =~/.emacs.d/backups=. See [[http://www.gnu.org/software/emacs
                                                  "backups"))))
   (setq auto-save-default nil)
   (setq create-lockfiles nil)
-#+END_SRC
+#+end_src
 
 Add the C-; command to comment a line.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun toggle-comment-on-line ()
     "comment or uncomment current line"
     (interactive)
     (comment-or-uncomment-region (line-beginning-position) (line-end-position)))
   (global-set-key (kbd "C-;") 'toggle-comment-on-line)
-#+END_SRC
+#+end_src
 
 This fixes a weird MacOS X pasteboard error.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (when (eq system-type 'darwin)
     ;; fix weird os x kill error
     (defun ns-get-pasteboard ()
@@ -698,22 +717,22 @@ This fixes a weird MacOS X pasteboard error.
       (condition-case nil
           (ns-get-selection-internal 'CLIPBOARD)
         (quit nil))))
-#+END_SRC
+#+end_src
 
 Disable electric indent.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq electric-indent-mode nil)
-#+END_SRC
+#+end_src
 
 Enable the Emacs [[https://www.emacswiki.org/emacs/TimeStamp][timestamp]] feature. When this feature is active, the
 text =Time-stamp: <>= within the first 8 lines of your file will be
 automatically updated to the current time whenever the file is saved.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (when (fboundp 'time-stamp)
     (add-hook 'before-save-hook 'time-stamp))
-#+END_SRC
+#+end_src
 
 ***** Enable Hippie Expand 
 
@@ -722,7 +741,7 @@ various ways including expanding from a fixed list (like
 =expand-abbrev=), expanding from matching text found in a buffer (like
 =dabbrev-expand=) or expanding in ways defined by your own functions.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (global-set-key (kbd "M-/") 'hippie-expand)
 
   ;; Lisp-friendly hippie expand
@@ -732,18 +751,18 @@ various ways including expanding from a fixed list (like
           try-expand-dabbrev-from-kill
           try-complete-lisp-symbol-partially
           try-complete-lisp-symbol))
-#+END_SRC
+#+end_src
 
 ***** Isearch Key Bindings
 
 By default, C-s runs =isearch-forward=, so this swaps the bindings.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (global-set-key (kbd "C-s") 'isearch-forward-regexp)
   (global-set-key (kbd "C-r") 'isearch-backward-regexp)
   (global-set-key (kbd "C-M-s") 'isearch-forward)
   (global-set-key (kbd "C-M-r") 'isearch-backward)
-#+END_SRC
+#+end_src
 
 *** Programming Languages
 
@@ -751,17 +770,17 @@ Load and configure modes for various programming languages.
 
 ***** Shell Scripts
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq-default sh-basic-offset 2)
   (setq-default sh-indentation 2)
-#+END_SRC
+#+end_src
 
 ***** Emacs-Lisp
 
 Load paredit mode. I have it disabled because it was making editing
 difficult. 
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (autoload 'enable-paredit-mode "paredit" "Turn on pseudo-structural editing of Lisp code." t)
 
   ;;(add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode)
@@ -770,17 +789,17 @@ difficult.
   ;;(add-hook 'lisp-mode-hook             #'enable-paredit-mode)
   ;;(add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
   ;;(add-hook 'scheme-mode-hook           #'enable-paredit-mode)
-#+END_SRC
+#+end_src
 
 
 Enable [[http://www.emacswiki.org/emacs/ElDoc][eldoc-mode]], which shows documentation in the minibuffer when
 writing code.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
   (add-hook 'lisp-interaction-mode-hook 'turn-on-eldoc-mode)
   (add-hook 'ielm-mode-hook 'turn-on-eldoc-mode)
-#+END_SRC
+#+end_src
 
 ***** Clojure
 
@@ -790,14 +809,14 @@ virtual machine. Clojure support for Emacs is provided by [[https://github.com/c
 
 Enable paredit for clojure.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-hook 'clojure-mode-hook 'enable-paredit-mode)
-#+END_SRC
+#+end_src
 
 Enable =subword-mode= for Clojure. This is useful for working with
 CamelCasedTokens such as Java class names.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;;;;
 ;; Clojure
 ;;;;
@@ -882,22 +901,22 @@ CamelCasedTokens such as Java class names.
      (define-key clojure-mode-map (kbd "C-M-r") 'cider-refresh)
      (define-key clojure-mode-map (kbd "C-c u") 'cider-user-ns)
      (define-key cider-mode-map (kbd "C-c u") 'cider-user-ns)))
-#+END_SRC
+#+end_src
 
 ***** Python
 
 Setup the Python imenu.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun my-merge-imenu ()
   (interactive)
   (let ((mode-imenu (imenu-default-create-index-function))
         (custom-imenu (imenu--generic-function imenu-generic-expression)))
     (append mode-imenu custom-imenu)))
-#+END_SRC
+#+end_src
 
 Define our =python-mode= hooks and key bindings.
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun my-python-hooks()
     (interactive)
     (setq tab-width     4
@@ -929,13 +948,13 @@ Define our =python-mode= hooks and key bindings.
 
 (add-hook 'python-mode-hook 'my-python-hooks)
 ;; End Python mode
-#+END_SRC
+#+end_src
 
 ***** Javascript
 
 Settings for Javascript code editing.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.js$" . js-mode))
   (add-hook 'js-mode-hook 'subword-mode)
   (add-hook 'html-mode-hook 'subword-mode)
@@ -945,11 +964,11 @@ Settings for Javascript code editing.
        (require 'tagedit)
        (tagedit-add-paredit-like-keybindings)
        (add-hook 'html-mode-hook (lambda () (tagedit-mode 1)))))
-#+END_SRC
+#+end_src
 
 And settings for Coffeescript editing.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.coffee.erb$" . coffee-mode))
   (add-hook 'coffee-mode-hook 'subword-mode)
   (add-hook 'coffee-mode-hook 'highlight-indentation-current-column-mode)
@@ -959,14 +978,14 @@ And settings for Coffeescript editing.
               (setq coffee-cleanup-whitespace nil)))
   (custom-set-variables
    '(coffee-tab-width 2))
-#+END_SRC
+#+end_src
 
 ***** Lisp
 
 Emacs does Lisp coding very well, obviously, but we still need to load
 [[https://common-lisp.net/project/slime/][SLIME]], the Superior Lisp Editing Mode for Emacs.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (cond
    (
     (eq system-type 'windows-nt)
@@ -974,34 +993,34 @@ Emacs does Lisp coding very well, obviously, but we still need to load
       (setenv "SBCL_HOME" "c:/sbcl")
       (setq inferior-lisp-program "c:/sbcl/sbcl.exe")))
    (t (setq inferior-lisp-program "sbcl")))
-#+END_SRC
+#+end_src
 
 If we have [[https://www.quicklisp.org/beta/][Quicklisp]] installed, we also need to load the Quicklisp
 SLIME helper.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defvar slime-helper-file nil "Location of the quicklisp slime-helper.el")
   (setq slime-helper-file (expand-file-name "~/quicklisp/slime-helper.el"))
   (if (and (fboundp 'slime-mode) (file-readable-p slime-helper-file))
       (load-file slime-helper-file))
-#+END_SRC
+#+end_src
 
 ***** Smalltalk
 
 Emacs smalltalk-mode customizations.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq smalltalk-indent-amount 2)
   (setq smalltalk-indent-align-colon t)
-#+END_SRC
+#+end_src
 
 ***** YAML
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (require 'yaml-mode)
   (add-to-list 'auto-mode-alist '("\\.yaml$" . yaml-mode))
   (add-to-list 'auto-mode-alist '("\\.yml$" . yaml-mode))
-#+END_SRC
+#+end_src
 
 *** Gnus
 
@@ -1014,7 +1033,7 @@ of other stuff. As you'll see, it's VERY customizable.
 
 We load =org-mode= from our =vendor/= tree.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/org/lisp"))
   (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/org/contrib/lisp"))
 
@@ -1044,11 +1063,11 @@ We load =org-mode= from our =vendor/= tree.
   (require 'org-datetree)
   (require 'org-protocol)
   (require 'org-inlinetask)
-#+END_SRC
+#+end_src
 
 Load org-babel (code) extensions for languages we use.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (require 'ob-core)
   (require 'ob-eval)
 
@@ -1072,12 +1091,12 @@ Load org-babel (code) extensions for languages we use.
       (sql . t)
      )
     )
-#+END_SRC
+#+end_src
 
 Since version 8, Org uses a modular exporter. Load the exporter pieces
 we need.
 
-#+BEGIN_SRC emacs-lisp tangle:no
+#+begin_src emacs-lisp tangle:no
   (require 'ox-publish)
   (require 'ox-html)
   (require 'ox-latex)
@@ -1086,25 +1105,25 @@ we need.
   (require 'ox-man)
   (require 'ox-beamer)
   (require 'ox-org)
-#+END_SRC
+#+end_src
 
 ***** Org File Associations
 
 We'll make org-mode the default for new buffers, as well as for text
 files. 
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
   (add-to-list 'auto-mode-alist '("\\.org_archive$" . org-mode))
   (add-to-list 'auto-mode-alist '("\\.txt$" . org-mode))
   (setq default-major-mode 'org-mode)
-#+END_SRC
+#+end_src
 
 We need to locate our =org-life= directory, either from github or
 Dropbox. We prefer the github repo, and will clone it if we can't find
 it. 
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defvar tlc/org-github-repo nil "Github directory for my org-life files")
   (setq tlc/org-github-repo "git@github.com:tammymakesthings/org_life.git")
 
@@ -1116,19 +1135,19 @@ it.
   (unless (file-directory-p org-directory)
     (if (yes-or-no-p (concat "Org directory \"" org-directory "\" not found - clone from Github?"))
         (shell-command (concat "git clone " tlc/org-github-repo " " (expand-file-name org-directory)))))
-#+END_SRC
+#+end_src
 
 ***** Basic Configuration
 
 Set the default notes file.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-default-notes-file (concat org-directory "/journal.org"))
-#+END_SRC
+#+end_src
 
 Define a function to open our most used files with a keystroke.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 
   (defvar tlc/org-master-files nil 
     "List of files for tlc/open-org-files to open.
@@ -1156,11 +1175,11 @@ Define a function to open our most used files with a keystroke.
 
   (global-set-key (kbd "<f12>") 'tlc/open-org-files)
   (global-set-key "\C-c=" 'tlc/open-org-files)
-#+END_SRC
+#+end_src
 
 Set a bunch of general settings.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-indent-mode t)
   (setq org-hide-leading-stars t)
   (setq org-odd-levels-only t)
@@ -1177,22 +1196,22 @@ Set a bunch of general settings.
 
   (setq org-alphabetical-lists t)
   (setq org-blank-before-new-entry '((heading . auto) (plain-list-item . nil)))
-#+END_SRC
+#+end_src
 
 Default startup settings for when we're opening new org files.
 
-#+BEGIN_SRC emacs-lisp 
+#+begin_src emacs-lisp 
   (setq org-startup-truncated nil)
   (setq org-startup-folded nil)
   (setq org-startup-indented t)
-#+END_SRC
+#+end_src
 
 Enable =font-lock-mode= and =fill-mode= in org files.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-hook 'org-mode-hook 'turn-on-font-lock)
   (add-hook 'org-mode-hook 'auto-fill-mode)
-#+END_SRC
+#+end_src
 
 ***** General Helper Functions
 
@@ -1201,21 +1220,21 @@ Enable =font-lock-mode= and =fill-mode= in org files.
 This code sets the STARTUP "folded" property for the currently
 selected subtree.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun tlc/org-add-folded-property nil
     "Add the STARTUP folded property to the subtree at point."
     (interactive)
     (org-set-property "STARTUP" "folded"))
-#+END_SRC
+#+end_src
 
 ***** Org Key Bindings
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (global-set-key "\C-cc" 'org-capture)
   (global-set-key "\C-cl" 'org-store-link)
   (global-set-key "\C-ca" 'org-agenda)
   (global-set-key "\C-cb" 'org-iswitchb)
-  (global-set-key "\C-cp" 'org-insert-property-drawer)
+  ; (global-set-key "\C-cp" 'org-insert-property-drawer)
   (global-set-key "\C-cr" 'org-refile)
   (global-set-key "\C-c/" 'org-agenda-list)
   (global-set-key "\C-cf" 'tlc/org-add-folded-property)
@@ -1224,22 +1243,22 @@ selected subtree.
   (global-set-key "\C-c\C-l" 'org-insert-link)
   (global-set-key (kbd "<f7>") 'org-agenda)
   (global-set-key (kbd "<f8>") 'org-agenda-list)
-#+END_SRC
+#+end_src
 
 ***** Archiving Settings
 
 Set the archiving location and options.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-archive-location "%s_archive::datetree/* Archive")
   (setq org-archive-mark-done nil)
-#+END_SRC
+#+end_src
 
 Enable archiving of a subtree to provide context from the original
 file, rather than flattening. See
 [[https://gist.github.com/osamu2001/370843]].
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defadvice org-archive-subtree (around fix-hierarchy activate)
     (let* ((fix-archive-p (and (not current-prefix-arg)
                                (not (use-region-p))))
@@ -1278,13 +1297,13 @@ file, rather than flattening. See
                 (widen)
                 (org-end-of-subtree t t)
                 (org-paste-subtree level tree-text))))))))
-#+END_SRC
+#+end_src
 
 ***** Org Agenda Settings
 
 Set general org-agenda options.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-deadline-warning-days 30)
   (setq org-agenda-skip-additional-timestamps-same-entry t)
   (setq org-agenda-skip-scheduled-if-done t)
@@ -1292,23 +1311,23 @@ Set general org-agenda options.
   (setq org-agenda-include-all-todo t)
   (setq org-agenda-include-diary t)
   (setq org-agenda-tags-todo-honor-ignore-options t)
-#+END_SRC
+#+end_src
 
 Specify our =org-agenda-files=.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-agenda-files (list
                            (concat org-directory "/master.org")
                            (concat org-directory "/journal.org")
                            (concat org-directory "/calls.org")
                            (concat org-directory "/proj_eos.org")
                            ))
-#+END_SRC
+#+end_src
 
 Helper function for =org-agenda-custom-commands= to skip a subtree if
 it has a particular priority. From [[https://blog.aaronbieber.com/2016/09/24/an-agenda-for-life-with-org-mode.html][Aaron's blog]].
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun air/org-skip-subtree-if-priority (priority)
     "Skip an agenda subtree if it has a priority of PRIORITY.
 
@@ -1319,11 +1338,11 @@ it has a particular priority. From [[https://blog.aaronbieber.com/2016/09/24/an-
       (if (= pri-value pri-current)
           subtree-end
         nil)))
-#+END_SRC
+#+end_src
 
 Define custom agenda views.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-agenda-custom-commands
         '(
           ("c" "Simple agenda view"
@@ -1353,29 +1372,29 @@ Define custom agenda views.
           ("Qr" "Refile search" search ""
            (org-agenda-files (file-expand-wildcards (concat org-directory "/refile*.org"))))
           ))
-#+END_SRC
+#+end_src
 
 ***** Logging Settings
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-log-done 'time)
   (setq org-log-into-drawer t)
   (setq org-log-state-notes-insert-after-drawers nil)
-#+END_SRC
+#+end_src
 
 ***** Tagging and Keyword Settings
 
 Simplify tag selection.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-use-fast-todo-selection t)
   (setq org-treat-S-cursor-todo-selection-as-state-change nil)
   (setq org-fast-tag-selection-single-key (quote expert))
-#+END_SRC
+#+end_src
 
 Define the default set of tags.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-tag-alist
         (quote (
                 (:startgroup) ("PROJECT" . ?p) ("EOS" . ?e ) ("WORK" . ?w) ("LEARNING" . ?l) ("PERSONAL" . ?p) (:endgroup)
@@ -1383,11 +1402,11 @@ Define the default set of tags.
                 (:startgroup) ("DELEGATED" . ?d) ("WAITING" . ?w) ("CANCELED" . ?c) (:endgroup)
                 (:startgroup) ("MEETING" . ?m) ("ONEONONE" . ?o) ("NOTE" . ?n) ("JOURNAL" . ?j) ("IDEA" . ?i) (:endgroup)
                 )))
-#+END_SRC
+#+end_src
 
 Define font faces for tags.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-tag-faces
         (quote (
                 ("PROJECT" :foreground "forest green" :weight bold)
@@ -1403,20 +1422,20 @@ Define font faces for tags.
                 ("JOURNAL" :foreground "orchid3" :weight bold)
                 ("ONEONONE" :foreground "orchid3" :weight bold)
                 ("IDEA" :foreground "orchid3" :weight bold))))
-#+END_SRC
+#+end_src
 
 Define the default set of TODO states.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-todo-keywords
         '(
           (sequence "TODO(t)" "DOING(d!)" "WAITING(w@/!)" "|" "DONE(x)" "CANCELED (c@)")
           ))
-#+END_SRC
+#+end_src
 
 Define font faces for todo keyword states.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-todo-keyword-faces
         (quote (
                 ("TODO" :foreground "red" :weight bold)
@@ -1424,13 +1443,13 @@ Define font faces for todo keyword states.
                 ("WAITING" :foreground "orange" :weight bold)
                 ("DONE" :foreground "medium orchid" :weight bold)
                 ("CANCELED" :foreground "forest green" :weight bold))))
-#+END_SRC
+#+end_src
 
 ***** Org Source Color Theme
 
 Change the coloring of org code blocks.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defface org-block-begin-line
   '((t (:underline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF")))
   "Face used for the line delimiting the begin of source blocks.")
@@ -1442,30 +1461,30 @@ Change the coloring of org code blocks.
 (defface org-block-end-line
   '((t (:overline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF")))
   "Face used for the line delimiting the end of source blocks.")
-#+END_SRC
+#+end_src
 
 ***** Org Property Settings
 
 Enable property inheritance.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-use-property-inheritance t)
-#+END_SRC
+#+end_src
 
 ***** Org Capture Settings
 
 Load [[https://github.com/progfolio/doct/][doct]], a helper library to declaratively set
 =org-capture-templates=.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (load "~/.emacs.d/vendor/doct/doct.el")
-#+END_SRC
+#+end_src
 
 We define a list of tasks for each day of the week. These are used by
 =tlc/org-today-entry= to build the list of tasks for today. We also
 define helpers for accessing entries in this list.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
     (defvar tlc/org-dow-tasks
       '((0 . nil) (1 . nil) (2 . nil) (3 . nil) (4 . nil) (5 . nil) (6 . nil))
       "A list of day-specific tasks for each day of the week. Used by the
@@ -1505,12 +1524,12 @@ define helpers for accessing entries in this list.
   (tlc/set-org-dow-tasks 5 '(
                              "TODO Send weekly SOW charges to FinAct"
                             ))
-#+END_SRC
+#+end_src
 
 And now we can define the =org-capture-templates= used by
 =org-capture=. There are lots of them.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-capture-templates
         (doct '(
                 ("Today Entry"
@@ -1518,18 +1537,18 @@ And now we can define the =org-capture-templates= used by
                  :file "master.org" :olp ("Journal")
                  :type entry :datetree t :tree-type week :prepend t
                  :template (
-                            "* Capacity Manager"
-                            "*** TODO Draft SOWs [/]"
-                            "*** TODO Upload SOWs to SpringCM [/]"
-                            "*** TODO Send SOWs for signature [/]"
-                            "* EOS - PSA Track                                   :EOS:"
-                            "* Tasks - Work"
-                            "%(tlc/org-today-entry-daily-tasks)"
-                            "*** "
-                            "* Tasks - Personal"
-                            "*** "
-                            "* Notes"
-                            "***"
+                            "********* Capacity Manager"
+                            "*********** TODO Draft SOWs [/]"
+                            "*********** TODO Upload SOWs to SpringCM [/]"
+                            "*********** TODO Send SOWs for signature [/]"
+                            "********* EOS - PSA Track                                       :EOS:"
+                            "*********** TODO "
+                            "********* Tasks - Work"
+                            "*********** TODO %(tlc/org-today-entry-daily-tasks)"
+                            "********* Tasks - Personal"
+                            "*********** TODO "
+                            "********* Notes"
+                            "*********** "
                             )
                  )
                 ("Tasks"
@@ -1652,21 +1671,21 @@ And now we can define the =org-capture-templates= used by
                  )
                 )
               ))
-#+END_SRC
+#+end_src
 
 Automatically re-align tags after capturing.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-hook 'org-capture-mode-hook 'org-align-all-tags)
   (add-hook 'org-after-tags-change-hook 'org-align-all-tags)
-#+END_SRC
+#+end_src
 
 ***** Refile Settings
 
 This is a helper function to refile into a datetree. It comes from
 [[https://github.com/alphapapa/unpackaged.el][here]].
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (cl-defun unpackaged/org-refile-to-datetree (file &key (date (calendar-current-date)) entry)
     "Refile ENTRY or current node to entry for DATE in datetree in FILE."
     (interactive (list (read-file-name "File: " (concat org-directory "/") nil 'mustmatch nil
@@ -1689,49 +1708,49 @@ This is a helper function to refile into a datetree. It comes from
       (error (unless entry
                (org-paste-subtree))
              (message "Unable to refile! %s" err))))
-#+END_SRC
+#+end_src
 
 Define valid refile targets.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-refile-targets '(
                              (nil :maxlevel . 9)
                              (org-agenda-files :maxlevel . 5)
                              ("someday.org" :maxlevel . 5)
                              ))
-#+END_SRC
+#+end_src
 
 Settings for the =org-refile= functions.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-outline-path-complete-in-steps t)
   (setq org-refile-use-outline-path t)
   (setq org-capture-bookmark nil)
   (setq org-reverse-note-order t)
   (setq org-refile-allow-creating-parent-nodes 'confirm)
   (setq org-refile-use-cache t)
-#+END_SRC
+#+end_src
 
 ***** Journal Entries
 
 Decide where the org journal file lives.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defvar org-journal-file (concat org-directory "/journal.org") "Path to OrgMode journal file.")
-#+END_SRC
+#+end_src
 
 Set the date format for journal entries.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defvar org-journal-date-format "%Y-%m-%d" "Date format string for journal headings.")
-#+END_SRC
+#+end_src
 
 ***** Timeclock settings
 
 Enable clocking in and out. Clock events are saved to the LOGBOOK
 drawer.
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
   (org-clock-persistence-insinuate)
 
   (setq org-clock-history-length 23)
@@ -1745,55 +1764,54 @@ drawer.
   (setq org-clock-persist-query-resume nil)
   (setq org-clock-auto-clock-resolution (quote when-no-clock-is-running))
   (setq org-clock-report-include-clocking-task t)
-#+END_SRC
+#+end_src
 
 Remove empty LOGBOOK drawers on clock-out.
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
   (defun bh/remove-empty-drawer-on-clock-out ()
     (interactive)
     (save-excursion
       (beginning-of-line 0)
       (org-remove-empty-drawer-at "LOGBOOK" (point))))
   (add-hook 'org-clock-out-hook 'bh/remove-empty-drawer-on-clock-out 'append)
-#+END_SRC
+#+end_src
 
 ***** Org Structure and Formatting
 
 Define structure templates.
 
-#+BEGIN_SRC emacs-lisp
-  (setq org-structure-template-alist
-        (quote (("s" "#+begin_src ?\n\n#+end_src" "<src lang=\"?\">\n\n</src>")
-                ("e" "#+begin_example\n?\n#+end_example" "<example>\n?\n</example>")
-                ("q" "#+begin_quote\n?\n#+end_quote" "<quote>\n?\n</quote>")
-                ("v" "#+begin_verse\n?\n#+end_verse" "<verse>\n?\n</verse>")
-                ("c" "#+begin_center\n?\n#+end_center" "<center>\n?\n</center>")
-                ("l" "#+begin_latex\n?\n#+end_latex" "<literal style=\"latex\">\n?\n</literal>")
-                ("L" "#+latex: " "<literal style=\"latex\">?</literal>")
-                ("h" "#+begin_html\n?\n#+end_html" "<literal style=\"html\">\n?\n</literal>")
-                ("H" "#+html: " "<literal style=\"html\">?</literal>")
-                ("a" "#+begin_ascii\n?\n#+end_ascii")
-                ("A" "#+ascii: ")
-                ("i" "#+index: ?" "#+index: ?")
-                ("I" "#+include %file ?" "<include file=%file markup=\"?\">"))))
-#+END_SRC
+#+begin_src emacs-lisp
+  (require 'org-tempo)
+
+(setq org-structure-template-alist '(
+  ("a" . "export ascii")
+  ("c" . "center")
+  ("C" . "comment")
+  ("e" . "example")
+  ("E" . "export")
+  ("h" . "export html")
+  ("l" . "export latex")
+  ("q" . "quote")
+  ("s" . "src")
+  ("v" . "verse")))
+#+end_src
 
 Define emphasis pairs.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-emphasis-alist (quote (("*" bold "<b>" "</b>")
                                    ("/" italic "<i>" "</i>")
                                    ("_" underline "<span style=\"text-decoration:underline;\">" "</span>")
                                    ("=" org-code "<code>" "</code>" verbatim)
                                    ("~" org-verbatim "<code>" "</code>" verbatim))))
-#+END_SRC
+#+end_src
 
 Disable superscripts and subscripts.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-use-sub-superscripts nil)
-#+END_SRC
+#+end_src
 
 ***** Org custom enter key behavior
 
@@ -1801,7 +1819,7 @@ This function supplies more context-aware enter key behavior in
 outlines. It can be disabled by setting =tlc/enable-org-custom-return=
 to =nil=.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun unpackaged/org-element-descendant-of (type element)
     "Return non-nil if ELEMENT is a descendant of TYPE.
   TYPE should be an element type, like `item' or `paragraph'.
@@ -1906,27 +1924,27 @@ to =nil=.
 
   (setq tlc/enable-org-custom-return t)
   (define-key org-mode-map (kbd "RET") 'unpackaged/org-return-dwim)
-#+END_SRC
+#+end_src
 
 ***** Org-Babel Settings
 
-Enable syntax highlight in #+BEGIN_SRC blocks.
+Enable syntax highlight in #+begin_src blocks.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-src-fontify-natively t)
-#+END_SRC
+#+end_src
 
 Don't prompt before running code in org.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-confirm-babel-evaluate nil)
-#+END_SRC
+#+end_src
 
 Fix an incompatibility between the =ob-async= and =ob-ipython= packages
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq ob-async-no-async-languages-alist '("ipython"))
-#+END_SRC
+#+end_src
 
 ***** Org File Skeletons
 
@@ -1934,7 +1952,7 @@ Fix an incompatibility between the =ob-async= and =ob-ipython= packages
 
 Define a skeleton for an Org file header.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (define-skeleton tlc/org-file-header-skeleton
     "Insert the header into aan org-mode file."
     "# -*- mode: org; coding: utf-8; -*-\n"
@@ -1946,11 +1964,11 @@ Define a skeleton for an Org file header.
     "#+STARTUP:  fnlocal fnaauto fnadjust \n"
     "#+FILETAGS: :" (skeleton-read "File tags (colon-separated): ") ":\n"
     )
-#+END_SRC
+#+end_src
 
 Define a skeleton for an Org project file.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (define-skeleton tlc/org-project-skeleton
     "Create a skeleton for an org project file."
     "# -*- mode: org; coding: utf-8; -*-\n"
@@ -1983,12 +2001,12 @@ Define a skeleton for an Org project file.
     "***** Post Mortem\n"
     "***** Punch List\n"
     "***** Final Report\n")
-#+END_SRC
+#+end_src
 
 
 Define a skeleton for a writing project.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (define-skeleton tlc/org-writing-skeleton
     "Create a skeleton for writing/publishing files."
     "#+TITLE: " (skeleton-read "Title: ") "\n"
@@ -2014,11 +2032,11 @@ Define a skeleton for a writing project.
     "* Prologue\n"
     "* Chapter 1\n"
     "* Unfiled Scenes                                                   :noexport:\n")
-#+END_SRC
+#+end_src
 
 Set key bindings for the org file skeletons.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (global-set-key "\C-c0" (lambda nil
                             (interactive)
                             (tlc/org-project-skeleton)
@@ -2031,14 +2049,14 @@ Set key bindings for the org file skeletons.
                             (interactive)
                             (tlc/org-writing-skeleton)
                             (org-align-all-tags)))
-#+END_SRC
+#+end_src
 
 Define helpers for jumping beteen skeleton markers. Markere are
 defined by including =@= characters in the skeletons. 
 
 This came from [[https://www.emacswiki.org/emacs/SkeletonMode][here]].
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defvar *skeleton-markers* nil "Markers for locations saved in skeleton-positions")
 
   (add-hook 'skeleton-end-hook 'skeleton-make-markers)
@@ -2068,13 +2086,13 @@ This came from [[https://www.emacswiki.org/emacs/SkeletonMode][here]].
 
   (global-set-key (kbd "\C-c <prior>") (lambda nil (interactive) (skeleton-next-position t)))
   (global-set-key (kbd "\C-c <next>") (lambda nil (interactive) (skeleton-next-position nil)))
-#+END_SRC
+#+end_src
 
 ***** Project Functions
 
 From https://karl-voit.at/2019/11/03/org-projects/.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun tlc/mark-as-project ()
   "This function makes sure that the current heading has
 
@@ -2108,11 +2126,11 @@ From https://karl-voit.at/2019/11/03/org-projects/.
              )
          )
   )
-#+END_SRC
+#+end_src
 
 ***** Todo Hooks
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defvar tlc/enable-todo-state-change-hook nil
     "Set to true to enable the TODO state change hook.")
 
@@ -2133,11 +2151,11 @@ From https://karl-voit.at/2019/11/03/org-projects/.
             (progn
               (org-clock-out t)))))))
   (add-hook 'org-after-todo-state-change-hook 'tlc/todo-state-change-hook)
-#+END_SRC
+#+end_src
 
 ***** Git Integration
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun tlc/commit-org-to-git (&optional dont-push)
     "Snapshot commit the org directory to git."
       (interactive "P")
@@ -2160,11 +2178,11 @@ From https://karl-voit.at/2019/11/03/org-projects/.
             (cd orig-directory))))
 
   (global-set-key "\C-cg" 'tlc/commit-org-to-git)
-#+END_SRC
+#+end_src
 
 ***** Formula helpers for org tables
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun tlc/rangeck (value min max &optional suppress-normal)
     "A helper function for Org tables to check if numbers are in a range."
     (cond
@@ -2174,9 +2192,9 @@ From https://karl-voit.at/2019/11/03/org-projects/.
      ((< value min) "** low")
      ((> value max) "high **")
      (t (if suppress-normal "" "normal"))))
-#+END_SRC
+#+end_src
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun tlc/labtest-exceptions (col-number)
   "Filters an org-mode lab results table for abnormal results."
   (cl-loop 
@@ -2184,13 +2202,13 @@ From https://karl-voit.at/2019/11/03/org-projects/.
    if (or (string-equal (nth col-number row) "high **") (string-equal (nth col-number row) "** low"))
    collect row into newtbl
    finally return (append '(hline ("" "Group" "Test" "Status" "Low" "Value" "High") hline) newtbl)))
-#+END_SRC
+#+end_src
 
 ***** Org publishing
 
 Helper to export org subtrees to multiple files.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun org-global-props (&optional property buffer)
     "Get the plists of global org properties of current buffer."
     (unless property (setq property "PROPERTY"))
@@ -2222,25 +2240,25 @@ Helper to export org subtrees to multiple files.
               (org-export-as-latex 7 nil export-file t (expand-file-name "./tex"))
              (deactivate-mark)
              (set-buffer-modified-p modifiedp))))))))
-#+END_SRC
+#+end_src
 
 Make sure =ox-latex= is loaded.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (require 'ox-latex)
-#+END_SRC
+#+end_src
 
 Always publish org projects, even if the source files are unchanged.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq org-publish-use-timestamps-flag nil)
-#+END_SRC
+#+end_src
 
 Define custom =pub_book= and =pub_book_fmem= classes. These are used
 by the [[https://github.com/tammymakesthings/latex-nonfiction-ebook-template][latex-nonfiction-ebook-template]] template to create the right
 levels of hierarchy in book projects.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-to-list 'org-latex-classes
               '(
                   "pub_book"
@@ -2259,17 +2277,17 @@ levels of hierarchy in book projects.
                   ("\\section*{%s}" . "\\section*{%s}")
                   ("\\subsection*{%s}" . "\\subsection*{%s}")
                   ("\\subsubsection*{%s}" . "\\subsubsection*{%s}")))
-#+END_SRC
+#+end_src
 
 Define a helper function to publish an org file to latex and then
 rename it.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun tlc/org-publish-and-rename-latex (src dst plist filename pubdir)
     (if (file-exists-p dst) (delete-file dst))
     (org-latex-publish-to-latex plist filename pubdir)
     (rename-file src dst))
-#+END_SRC
+#+end_src
 
 ******* Trans/Formation 2nd Ed Publishing Settings
 
@@ -2277,7 +2295,7 @@ Define helper functions to publish the three pieces of the book (front
 matter, main matter, end matter) and rename them appropriately after
 output. 
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun tlc/org-publish-transformation2e-fm (plist filename pubdir)
     (tlc/org-publish-and-rename-latex
      "~/org-life/transformation_2e/tex/transformation_2e.tex"
@@ -2295,12 +2313,12 @@ output.
      "~/org-life/transformation_2e/tex/transformation_2e.tex"
      "~/org-life/transformation_2e/tex/transformation_2e_endmatter.tex"
      plist filename pubdir))
-#+END_SRC
+#+end_src
 
 Define the =org-publish-project-alist= to publish the book files for
 this project.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-to-list 'org-publish-project-alist 
                '("transformation2e"
                  :components ( "transformation2e_fm" 
@@ -2330,11 +2348,11 @@ this project.
                  :publishing-function tlc/org-publish-transformation2e-em
                  :select-tags ("endmatter")
                  :with-latex t :latex-class "pub_book_fmem" :body-only t))
-#+END_SRC
+#+end_src
 
 ***** Outlook Integration
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defvar tlc/enable-org-outlook-integration t "Enable ol-get for Outlook integration")
   (when (and tlc/enable-org-outlook-integration (eq system-type 'windows-nt))
     (progn
@@ -2353,7 +2371,7 @@ this project.
 
       (org-add-link-type "outlook" #'org-outlook-open)
       ))
-#+END_SRC
+#+end_src
       
 
 *** LaTeX editing
@@ -2362,19 +2380,19 @@ this project.
 
 Make sure the Gnu server is started if it's available.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (unless (and (fboundp 'server-running-p) 
            (server-running-p))
      (server-start))
-#+END_SRC
+#+end_src
 
 *** Miscellaneous Customizations
 
 ***** Change all yes/no questions to y/n type
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (fset 'yes-or-no-p 'y-or-n-p)
-#+END_SRC
+#+end_src
 
 ***** Create a New Empty Buffer
 
@@ -2384,7 +2402,7 @@ buffer name is not =*scratch*=, you'll be offered a chance to save it.
 
 From [[http://ergoemacs.org/emacs/emacs_new_empty_buffer.html][http://ergoemacs.org/emacs/emacs_new_empty_buffer.html]].
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun tlc/new-empty-buffer nil
     "Create a new empty buffer.
 
@@ -2407,14 +2425,14 @@ From [[http://ergoemacs.org/emacs/emacs_new_empty_buffer.html][http://ergoemacs.
             $buf))))
 
   (global-set-key (kbd "<f5>") 'tlc/new-empty-buffer)
-#+END_SRC
+#+end_src
 
 *** customize Settings
 
 Random stuff set by the Emacs customize interface. Could probably be
 refactored out to somewhere else.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (custom-set-variables
    ;; custom-set-variables was added by Custom.
    ;; If you edit it by hand, you could mess it up, so be careful.
@@ -2442,4 +2460,4 @@ refactored out to somewhere else.
    ;; Your init file should contain only one such instance.
    ;; If there is more than one, they won't work right.
    )
-#+END_SRC
+#+end_src

@@ -1,7 +1,7 @@
 # -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-02-27 09:42:42 tammy.cravit>
+#+DATE: Time-stamp: <2020-02-28 09:53:50 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1142,7 +1142,7 @@ it.
 Set the default notes file.
 
 #+begin_src emacs-lisp
-  (setq org-default-notes-file (concat org-directory "/journal.org"))
+  (setq org-default-notes-file (file-truename (concat org-directory "/master.org")))
 #+end_src
 
 Define a function to open our most used files with a keystroke.
@@ -1169,7 +1169,7 @@ Define a function to open our most used files with a keystroke.
 
   (setq tlc/org-master-files '(
                                "master.org"
-                               "journal.org"
+;                               "journal.org"
                                "proj_eos.org"
                                "codex.org"))
 
@@ -1536,31 +1536,32 @@ And now we can define the =org-capture-templates= used by
                  :keys "z"
                  :file "master.org" :olp ("Journal")
                  :type entry :datetree t :tree-type week :prepend t
-                 :template (
-                            "********* Capacity Manager"
-                            "*********** TODO Draft SOWs [/]"
-                            "*********** TODO Upload SOWs to SpringCM [/]"
-                            "*********** TODO Send SOWs for signature [/]"
-                            "********* EOS - PSA Track                                       :EOS:"
-                            "*********** TODO "
-                            "********* Tasks - Work"
-                            "*********** TODO %(tlc/org-today-entry-daily-tasks)"
-                            "********* Tasks - Personal"
-                            "*********** TODO "
-                            "********* Notes"
-                            "*********** "
-                            )
+                 :template 
+                 (
+                  "********* Capacity Manager                              :CAPACITYMGR:"
+                  "*********** TODO Draft SOWs [/]"
+                  "*********** TODO Upload SOWs to SpringCM [/]"
+                  "*********** TODO Send SOWs for signature [00]"
+                  "********* EOS - PSA Track                                       :EOS:"
+                  "********* Tasks - Work                                        :TASKS:"
+                  "*********** TODO %(tlc/org-today-entry-daily-tasks)"
+                  "********* Tasks - Personal                                    :TASKS:"
+                  )
                  )
                 ("Tasks"
                  :keys "t"
-                 :file "refile.org" :headline "To Refile" :type entry
+                 :file "master.org" :olp ("Journal")
+                 :type entry :datetree t :tree-type week :prepend t
                  :children (
                             ("Respond"
                              :keys "r"
                              :template "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n")
                             ("Meeting with %?"
                              :keys "m"
-                             :template "* MEETING with %? :MEETING:\n%U")
+                             :template "* Meeting with %? :MEETING:\n%U")
+                            ("Meeting: %?"
+                             :keys "M"
+                             :template "* %<%Y-%m-%d> - %? :MEETING:\n%U")
                             ("Task"
                              :keys "t"
                              :template "* TODO %?\n%U\n")
@@ -1580,6 +1581,9 @@ And now we can define the =org-capture-templates= used by
                             ("Meeting with %?"
                              :keys "m"
                              :template "* MEETING with %? :MEETING:\n%U")
+                            ("Meeting: %?"
+                             :keys "M"
+                             :template "* %<%Y-%m-%d> - %? :MEETING:\n%U")
                             ("Task"
                              :keys "t"
                              :template "* TODO %?\n%U\n")
@@ -1589,21 +1593,21 @@ And now we can define the =org-capture-templates= used by
                             )
                  )
 
-                (:group "Note" :type entry :olp ("Journal")
+                (:group "Note" :file "master.org" :type entry :olp ("Journal")
                         :datetree t :time-prompt t :tree-type week :prepend t
                         :template "* %? :NOTE:\n%U\n"
                         :children (
-                                   ("Note" :keys "n" :file "journal.org")
+                                   ("Note" :keys "n" :file "master.org")
                                    ("Note (EOS)" :keys "N" :file "proj_eos.org")
                                    ))
 
-                (:group "Journal" :type entry  :olp ("Journal")
+                (:group "Journal" :type entry  :olp ("Journal") :file "master.org"
                         :datetree t :time-prompt t :tree-type week :prepend t
                         :template  "* %? :JOURNAL:\n%U\n"
                         :children (
-                                   ("Journal" :keys "j" :file "journal.org")
+                                   ("Journal" :keys "j" :file "masterl.org")
                                    ("Journal (EOS)" :keys "J" :file "proj_eos.org")
-                                   ("Idea" :keys "i" :file "journal.org"
+                                   ("Idea" :keys "i" :file "master.org"
                                     :template "* %? :IDEA:\n%U\n")
                                    ))
 
@@ -1619,19 +1623,19 @@ And now we can define the =org-capture-templates= used by
 
                 ("One-on-One Meeting"
                  :keys "o"
-                 :file "journal.org" :type entry :olp ("Journal")
-                 :datetree t :tree-type week :prepend t
+                 :file "master.org" :type entry :olp ("Journal")
+                 :datetree t :tree-type week :prepend t :time-prompt t
                  :template (
                             "* One on One - %^{PROMPT} :ONEONONE:"
                             "*** My Agenda Items [/]"
-                            "- [ ] %?"
-                            "*** Other Agenda Items"
+                            "***** [ ] %?"
+                            "*** %^{PROMPT}'s Agenda Items"
                             "*****"
                             "*** Notes"
                             "*** Next Actions"
                             ))
 
-                ("Link" :keys "l" :file "codex.org" :template "*** %?\n%U\n")
+                ("Link" :keys "l" :file "codex.org" :template "* %?\n%U\n")
 
                 ("To Buy" :keys "B" :file "personal.org" :headline "To Buy"
                  :template "* TODO Buy %c\n%U\n")
@@ -1736,7 +1740,7 @@ Settings for the =org-refile= functions.
 Decide where the org journal file lives.
 
 #+begin_src emacs-lisp
-  (defvar org-journal-file (concat org-directory "/journal.org") "Path to OrgMode journal file.")
+  (defvar org-journal-file (concat org-directory "/master.org") "Path to OrgMode journal file.")
 #+end_src
 
 Set the date format for journal entries.

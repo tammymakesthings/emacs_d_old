@@ -1,4 +1,4 @@
-# -*- mode: org; fill-column: 78; -*-
+* # -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
 #+DATE: Time-stamp: <2020-02-28 09:53:50 tammy.cravit>
@@ -164,11 +164,10 @@ Set TLS settings for installations.
 
 #+begin_src emacs-lisp
   (with-eval-after-load 'gnutls
-    (if (or (eq system-type 'windows-nt) (eq system-type 'darwin))
     (setq gnutls-verify-error nil)
     (setq gnutls-min-prime-bits 1024)
     (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.2")
-    (add-to-list 'gnutls-trustfiles "/usr/local/etc/libressl/cert.pem")))
+    (add-to-list 'gnutls-trustfiles "/usr/local/etc/libressl/cert.pem"))
 #+end_src
 
 Load the packaging system and set up repositories.
@@ -180,7 +179,6 @@ Load the packaging system and set up repositories.
                           ("gnu"          . "http://elpa.gnu.org/packages/")
                           ("melpa"        . "http://melpa.milkbox.net/packages/")
                           ("melpa-stable" . "http://stable.melpa.org/packages/")))
-  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
   (add-to-list 'package-pinned-packages '(cider              . "melpa-stable") t)
   (add-to-list 'package-pinned-packages '(magit              . "melpa-stable") t)
 #+end_src

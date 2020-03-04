@@ -28,7 +28,7 @@
                              (assoc :raw-value (cdr dolist-elt))
                              (car dolist-elt)
                              (assoc :parent (cdr dolist-elt)))))
-            (message "Not on a daily entry that can be closed out")))))
+            (message "Not on a daily entry that can be closed out"))))))
   ;; If we're looking at a day entry AND
   ;; If the entry is for yesterday's date AND 
   ;; If the entry does not have the close-out property set

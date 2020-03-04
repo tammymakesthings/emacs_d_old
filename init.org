@@ -1,4 +1,4 @@
- -*- mode: org; fill-column: 78; -*-
+# -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
 #+DATE: Time-stamp: <2020-03-04 08:20:56 tammy.cravit>
@@ -164,11 +164,10 @@ Set TLS settings for installations.
 
 #+begin_src emacs-lisp
   (with-eval-after-load 'gnutls
-    (if (or (eq system-type 'windows-nt) (eq system-type 'darwin))
     (setq gnutls-verify-error nil)
     (setq gnutls-min-prime-bits 1024)
     (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.2")
-    (add-to-list 'gnutls-trustfiles "/usr/local/etc/libressl/cert.pem")))
+    (add-to-list 'gnutls-trustfiles "/usr/local/etc/libressl/cert.pem"))
 #+end_src
 
 Load the packaging system and set up repositories.

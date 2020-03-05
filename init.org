@@ -1,7 +1,7 @@
 # -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-05 14:46:39 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-05 14:50:38 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1339,9 +1339,9 @@ From [[https://pages.sachachua.com/.emacs.d/Sacha.html#orgfe5d909][sacha chua]] 
 hierarchy.
 
 #+begin_src emacs-lisp
-(with-eval-after-load 'org
-   (bind-key "C-c k" 'org-cut-subtree org-mode-map)
-   (setq org-yank-adjusted-subtrees t))
+  (with-eval-after-load 'org
+    (global-set-key "\C-ck" 'org-cut-subtree)
+    (setq org-yank-adjusted-subtrees t))
 #+end_src
 
 ******* Add a Folded Property to a Subtree
@@ -1817,19 +1817,19 @@ Load up [[][org-protocol-capture-html] which can capture a whole Web page to
 org-mode. Requires the [[https://github.com/magnars/s.el][s.el]] library and [[https://pandoc.org/][pandoc]].
 
 #+begin_src emacs-lisp
-  (tlc/git-clone-to-vendor-dir "s" "https://github.com/magnars/s.el.git")
-  (tlc/git-clone-to-vendor-dir "org-protocol-capture-html" 
-                               "https://github.com/alphapapa/org-protocol-capture-html.git")
+  ;; (tlc/git-clone-to-vendor-dir "s" "https://github.com/magnars/s.el.git")
+  ;; (tlc/git-clone-to-vendor-dir "org-protocol-capture-html" 
+  ;;                              "https://github.com/alphapapa/org-protocol-capture-html.git")
 
-  (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/s"))
-  (add-to-list 'load-path (concat (file-truename user-emacs-directory) 
-                                  "vendor/org-protocol-capture-html"))
+  ;; (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/s"))
+  ;; (add-to-list 'load-path (concat (file-truename user-emacs-directory) 
+  ;;                                 "vendor/org-protocol-capture-html"))
 
-  (require 'org-protocol-capture-html)
+  ;; (require 'org-protocol-capture-html)
 
-  (add-to-list 'org-capture-templates '("w" "Web site" entry
-                                         (file "")
-                                         "* %a :website:\n\n%U %?\n\n%:initial"))
+  ;; (add-to-list 'org-capture-templates '("w" "Web site" entry
+  ;;                                        (file "")
+  ;;                                        "* %a :website:\n\n%U %?\n\n%:initial"))
 #+end_src
 
 ***** Refile Settings

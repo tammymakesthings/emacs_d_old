@@ -1,7 +1,7 @@
 # -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-04 08:20:56 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-05 14:46:39 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1154,6 +1154,8 @@ We load =org-mode= from our =vendor/= tree.
                 org-bibtex
                 org-ctags
                 org-datetree
+                org-element
+                org-protocol
                 org-docview
                 org-element
                 org-gnus
@@ -1167,10 +1169,14 @@ We load =org-mode= from our =vendor/= tree.
                 org-rmail
                 org-w3m
                 )))
-  (require 'org-element)
-  (require 'org-datetree)
-  (require 'org-protocol)
-  (require 'org-inlinetask)
+
+(require 'org-element)
+(require 'org-datetree)
+(require 'org-protocol)
+(require 'org-inlinetask)
+(eval-after-load 'org
+ '(org-load-modules-maybe t))
+
 #+end_src
 
 Load org-babel (code) extensions for languages we use.
@@ -1205,14 +1211,15 @@ Since version 8, Org uses a modular exporter. Load the exporter pieces
 we need.
 
 #+begin_src emacs-lisp tangle:no
-  (require 'ox-publish)
-  (require 'ox-html)
-  (require 'ox-latex)
-  (require 'ox-ascii)
-  (require 'ox-md)
-  (require 'ox-man)
-  (require 'ox-beamer)
-  (require 'ox-org)
+;  (require 'ox-publish)
+;  (require 'ox-html)
+;  (require 'ox-latex)
+;  (require 'ox-ascii)
+;  (require 'ox-md)
+;  (require 'ox-man)
+;  (require 'ox-beamer)
+;  (require 'ox-org)
+(setq org-export-backends '(org latex taskjuggler publish))
 #+end_src
 
 ***** Org File Associations
@@ -1302,8 +1309,10 @@ Set a bunch of general settings.
   (setq org-src-fontify-natively t)
   (setq org-catch-invisible-edits 'error)
 
+  (setq org-cycle-include-plain-lists 'integrate)
   (setq org-alphabetical-lists t)
   (setq org-blank-before-new-entry '((heading . auto) (plain-list-item . nil)))
+
 #+end_src
 
 Default startup settings for when we're opening new org files.
@@ -1323,6 +1332,17 @@ Enable =font-lock-mode= and =fill-mode= in org files.
 #+end_src
 
 ***** General Helper Functions
+
+******* Cut and paste subtrees
+
+From [[https://pages.sachachua.com/.emacs.d/Sacha.html#orgfe5d909][sacha chua]] - makes it easier to cut something and paste elsewhere in the
+hierarchy.
+
+#+begin_src emacs-lisp
+(with-eval-after-load 'org
+   (bind-key "C-c k" 'org-cut-subtree org-mode-map)
+   (setq org-yank-adjusted-subtrees t))
+#+end_src
 
 ******* Add a Folded Property to a Subtree
 
@@ -1757,16 +1777,15 @@ And now we can define the =org-capture-templates= used by
 
                 ("Protocol" :keys "p" :file "codex.org" 
                  :template ("* [[%:link][%:description]]"
-                            ""
                             "Captured at: %u"
                             "#+BEGIN_QUOTE"
                             "%i"
-                            "#+END_QUOTE\n\n\n"
-                            "%?"))
+                            "#+END_QUOTE"
+                            ))
 
                 ("Protocol Link" :keys "L" :file "codex.org" 
                  :template ("* %? [[%:link][%:description]] "
-                            "Captured On: %U"))
+                            "Captured at: %U"))
 
                 ("Habit"
                  :keys "h" :file "master.org" :headline "Habits"
@@ -1908,6 +1927,14 @@ Remove empty LOGBOOK drawers on clock-out.
       (beginning-of-line 0)
       (org-remove-empty-drawer-at "LOGBOOK" (point))))
   (add-hook 'org-clock-out-hook 'bh/remove-empty-drawer-on-clock-out 'append)
+#+end_src
+
+***** Org Todo Dependencies
+
+#+begin_src emacs-lisp
+(setq org-enforce-todo-dependencies t)
+(setq org-track-ordered-property-with-tag t)
+(setq org-agenda-dim-blocked-tasks t)
 #+end_src
 
 ***** Org Structure and Formatting
@@ -2526,6 +2553,37 @@ this project.
                  :with-latex t :latex-class "pub_book_fmem" :body-only t))
 #+end_src
 
+******* TaskJuggler Integration
+
+#+begin_src emacs-lisp
+  (require 'ox-taskjuggler)
+
+  (if (fboundp 'ox-taskjuggler)
+      (progn
+        (setq org-taskjuggler-default-global-properties
+              (string-join '(
+                             "shift s40 \"Part time shift\" {"
+                             "  workinghours wed, thu, fri off"
+                             "}"
+                             "shift fulltime \"Full time shift\" {"
+                             "  workinghours mon-fri 9:00-12:00, 13:00-17:00"
+                             "}"
+                             "shift tammy \"Full time - early start\" {"
+                             "  workinghours mon-fri 07:00-11:00, 12:00-16:00"
+                             "}"
+                             "timezone \"America/Phoenix\""
+                             "currency \"USD\""
+                             "timeformat \"%Y-%m-%d\""
+                             "numberformat \"-\" \"\" \",\" \".\" 1"
+                             "currencyformat \"(\" \")\" \",\" \".\" 0"
+                             ) "\n"))
+        (setq org-taskjuggler-keep-project-as-task nil)
+        (setq org-taskjuggler-target-version "3.6")
+        (setq org-taskjuggler-project-tag "taskjuggler_project")
+        (setq org-taskjuggler-resource-tag "taskjuggler_resource")
+        (setq org-export-taskjuggler-report-tag "taskjuggler_report")
+        ))
+#+end_src
 ***** Outlook Integration
 
 #+begin_src emacs-lisp

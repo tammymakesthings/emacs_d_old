@@ -14,5 +14,4 @@ vendor/**
 org-clock-save.el
 projectile-bookmarks.eld
 ido.last
-init.el 
- 
+*.el

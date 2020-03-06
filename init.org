@@ -1,7 +1,7 @@
-# -*- mode: org; fill-column: 78; -*-
+ -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-05 14:50:38 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-06 11:08:19 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1574,6 +1574,16 @@ Define font faces for todo keyword states.
                 ("CANCELED" :foreground "forest green" :weight bold))))
 #+end_src
 
+Mark a TODO as complete when all child TGDOs are completed. From [[https://orgmode.org/manual/Breaking-Down-Tasks.html][here]].
+
+#+begin_src emacs-lisp
+(defun org-summary-todo (n-done n-not-done)
+  "Switch entry to DONE when all subentries are done, to TODO otherwise."
+  (let (org-log-done org-log-states)   ; turn off logging
+    (org-todo (if (= n-not-done 0) "DONE" "TODO"))))
+
+(add-hook 'org-after-todo-statistics-hook 'org-summary-todo)
+#+end_src
 ***** Org Source Color Theme
 
 Change the coloring of org code blocks.
@@ -2587,7 +2597,7 @@ this project.
 ***** Outlook Integration
 
 #+begin_src emacs-lisp
-  (defvar tlc/enable-org-outlook-integration t "Enable ol-get for Outlook integration")
+  (defvar tlc/enable-org-outlook-integration nil "Enable ol-get for Outlook integration")
   (when (and tlc/enable-org-outlook-integration (eq system-type 'windows-nt))
     (progn
       (require 'ts)

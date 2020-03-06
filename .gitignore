@@ -8,7 +8,6 @@ elpa/**
 server/**
 themes/**
 transient/**
-vendor/**
 .recentf
 .smex-items
 org-clock-save.el

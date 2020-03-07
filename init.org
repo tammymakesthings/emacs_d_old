@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-06 11:08:19 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-07 15:04:23 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -2569,35 +2569,136 @@ this project.
 
 ******* TaskJuggler Integration
 
+Set up org taskjuggler integrations.
+
 #+begin_src emacs-lisp
   (require 'ox-taskjuggler)
 
-  (if (fboundp 'ox-taskjuggler)
-      (progn
-        (setq org-taskjuggler-default-global-properties
-              (string-join '(
-                             "shift s40 \"Part time shift\" {"
-                             "  workinghours wed, thu, fri off"
-                             "}"
-                             "shift fulltime \"Full time shift\" {"
-                             "  workinghours mon-fri 9:00-12:00, 13:00-17:00"
-                             "}"
-                             "shift tammy \"Full time - early start\" {"
-                             "  workinghours mon-fri 07:00-11:00, 12:00-16:00"
-                             "}"
-                             "timezone \"America/Phoenix\""
-                             "currency \"USD\""
-                             "timeformat \"%Y-%m-%d\""
-                             "numberformat \"-\" \"\" \",\" \".\" 1"
-                             "currencyformat \"(\" \")\" \",\" \".\" 0"
-                             ) "\n"))
-        (setq org-taskjuggler-keep-project-as-task nil)
-        (setq org-taskjuggler-target-version "3.6")
-        (setq org-taskjuggler-project-tag "taskjuggler_project")
-        (setq org-taskjuggler-resource-tag "taskjuggler_resource")
-        (setq org-export-taskjuggler-report-tag "taskjuggler_report")
-        ))
+  (setq org-taskjuggler-keep-project-as-task nil)
+  (setq org-taskjuggler-target-version 3)
 #+end_src
+
+Set up the org-mode tags we'll use to identify our project plan sections.
+
+#+begin_src emacs-lisp
+  (setq org-taskjuggler-project-tag "taskjuggler_project")
+  (setq org-taskjuggler-resource-tag "taskjuggler_resource")
+  (setq org-export-taskjuggler-report-tag "taskjuggler_report")
+
+  (setq org-taskjuggler-default-global-properties
+      (string-join 
+       '(
+         ""
+         "# Include standard shift definitions"
+         "include \"shifts.tji\""
+         ""
+         "# Include EOS Deadlines as vacations"
+         "include \"eos_deadlines.tji\""
+         "\n"
+         ) "\n"))
+#+end_src
+
+We pull in the default reports from an include file rather than hard-coding
+them.
+
+#+begin_src emacs-lisp
+  (setq org-taskjuggler-default-reports '("include \"reports.tji\""))
+#+end_src
+
+Build a hook to allow adding content to the generated TaskJuggler file after
+generation.
+
+#+begin_src emacs-lisp
+      (defvar tlc/taskjuggler-prologue-includes nil 
+        "Files to include at the start of TJ files")
+      (defvar tlc/taskjuggler-project-includes nil
+        "Files whose contents will be inserted at the end of the project block.")
+      (defvar tlc/taskjuggler-epilogue-includes nil 
+        "Files to include at the end of TJ files")
+      (defvar tlc/taskjuggler-suppress-insertion-comments t
+        "Suppress comments around blocks inserted by the export hook.")
+
+      (setq tlc/taskjuggler-project-includes '("scenarios.tji"))
+      (setq tlc/taskjuggler-epilogue-includes '("exports.tji"))
+
+      (defun tlc/taskjuggler-export-hook--find-end-of-block (filename section)
+        (progn
+          (goto-char (point-min))
+          (unless (looking-at (concat section " "))
+                (search-forward (concat section " ") nil t))
+              (if (looking-at (concat section " "))
+                  (progn
+                    (end-of-line)
+                    (backward-char)
+                    (forward-sexp)
+                    (backward-char 2)
+                    t)
+                  nil)))
+
+      (defun tlc/taskjuggler-export-hook--do-include (filename include-type include-list &optional insert-contents-p suppress-comments-p)
+        (if include-list
+            (progn
+              (unless suppress-comments-p
+                (insert (concat "\n# BEGIN " include-type " includes added by tlc/taskjuggler-export-hook\n")))
+              (mapc (lambda (f) 
+                      (progn
+                        (if insert-contents-p
+                          (progn
+                            (insert-file f)
+                            (exchange-point-and-mark)
+                            (insert "\n"))
+                          (insert (concat "include \"" f "\"\n")))))
+                    include-list)
+              (unless suppress-comments-p
+                (insert (concat "\n# END " include-type " includes added by tlc/taskjuggler-export-hook\n\n"))))))
+
+      (defun tlc/taskjuggler-export-hook (filename)
+        "Add necessary include files to generated taskjuggler files."
+        (if (file-readable-p filename)
+            (if (find-file filename)
+                (progn 
+                  (switch-to-buffer filename)
+                  (goto-char (point-min))
+                  (tlc/taskjuggler-export-hook--do-include filename 
+                                                           "Prologue" 
+                                                           tlc/taskjuggler-prologue-includes 
+                                                           nil 
+                                                           tlc/taskjuggler-suppress-insertion-comments)
+
+                  (goto-char (point-min))
+                  (if (tlc/taskjuggler-export-hook--find-end-of-block filename "project")
+                      (tlc/taskjuggler-export-hook--do-include filename 
+                                                               "Project" 
+                                                               tlc/taskjuggler-project-includes 
+                                                               t 
+                                                               tlc/taskjuggler-suppress-insertion-comments))
+
+                  (goto-char (point-max))
+                  (tlc/taskjuggler-export-hook--do-include filename 
+                                                           "Epilogue" 
+                                                           tlc/taskjuggler-epilogue-includes 
+                                                           nil
+                                                           tlc/taskjuggler-suppress-insertion-comments)
+
+                  (let 
+                      ((modified (buffer-modified-p)))
+                        (progn
+                          (if modified
+                              (save-buffer))
+                          (kill-buffer)
+                          modified))))))
+
+      (add-hook 'org-taskjuggler-final-hook 'tlc/taskjuggler-export-hook)
+#+end_src
+
+Add some additional attributes to the exporter.
+#+begin_src emacs-lisp
+  (add-to-list 'org-taskjuggler-valid-resource-attributes 'include)
+  (add-to-list 'org-taskjuggler-valid-resource-attributes 'shifts)
+  (add-to-list 'org-taskjuggler-valid-task-attributes 'include)
+  (add-to-list 'org-taskjuggler-valid-project-attributes 'include)
+#+end_src
+
 ***** Outlook Integration
 
 #+begin_src emacs-lisp

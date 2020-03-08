@@ -13,6 +13,6 @@ transient/**
 org-clock-save.el
 projectile-bookmarks.eld
 ido.last
-*.el
+init.el
 *bookmarks*
 init.el.firstrun

@@ -1,15 +1,16 @@
- -*- mode: org; fill-column: 78; -*-
+* -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-07 15:04:23 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-08 17:36:15 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
 #+LATEX_HEADER: \usepackage[utf8]{inputenc}
 #+PROPERTY: header-args :tangle yes
 
+*
 * About
-  
+
 This is my Emacs configuration. it is designed to be as platform
 agnostic as possible, and is tangled into an [[https://orgmode.org/][org]] file with
 documentation. The =init.el= file in the repo (copied as
@@ -18,11 +19,11 @@ documentation. The =init.el= file in the repo (copied as
 
 More details about the detangling process are [[*Meta - Detangling][here]].
 
-The master source for this file is [[https://github.com/tammymakesthings/emacs_d][here]]. 
+The master source for this file is [[https://github.com/tammymakesthings/emacs_d][here]].
 
 * Lisp File Header
 
- #+begin_src emacs-lisp
+ #+begin_src emacs-lisp tangle:yes
    ;;; -*- mode: emacs-lisp; lexical-binding: t -*-
    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
    ;;;; Emacs Configuration - Tammy Cravit
@@ -50,12 +51,12 @@ Emacs can't load =.org=-files directly, but =org-mode= provides functions
 to extract the code blocks and write them to a file. There are multiple
 ways of handling this; like suggested by [[http://emacs.stackexchange.com/questions/3143/can-i-use-org-mode-to-structure-my-emacs-or-other-el-configuration-file][this StackOverflow post]], one
 could just use =org-babel-load-file=, but there are problems with
-byte-compilation. 
+byte-compilation.
 
 When this configuration is loaded for the first time, the ~init.el~ is
 the file that is loaded. It looks like this:
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle init.el.firstrun
   ;; This file replaces itself with the actual configuration at first run.
 
   ;; We can't tangle without org!
@@ -79,7 +80,7 @@ the following command =git= will not bother tracking it:
 #+begin_src sh :tangle no
   git update-index --assume-unchanged init.el
 #+end_src
-   
+
 If one wishes to make changes to the repo-version of =init.el= start
 tracking again with:
 
@@ -97,6 +98,10 @@ the =after-save-hook= ensuring to always tangle and byte-compile the
 =org=-document after changes.
 
 #+begin_src emacs-lisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Automatically tangle init.org on save to produce init.el
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
   (defun tangle-init ()
     "If the current buffer is 'init.org' the code-blocks are
   tangled, and the tangled file is compiled."
@@ -135,6 +140,13 @@ it. However, I do make the following assumptions:
 
 *** Preliminaries
 
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Preliminary Configuration Items
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
+
 On Windows, Emacs starts up in the wrong directory. Fix that before we
 get too much farther.
 
@@ -152,6 +164,13 @@ Set some variables to identify who I am.
 #+end_src
 
 *** Package Installation
+
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Packaging System Setup/Package Installation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
 
 On Windows systems, I've had problems with TLS errors, so disable TLS
 transport on Windows systems.
@@ -221,11 +240,11 @@ Now let's define the packages we'll need to load from ELPA.
   ;; Add in your own as you wish:
   (defvar my-packages
     '(
-      paredit 
-      clojure-mode 
-      clojure-mode-extra-font-locking 
-      cider 
-      ido-completing-read+ 
+      paredit
+      clojure-mode
+      clojure-mode-extra-font-locking
+      cider
+      ido-completing-read+
       smex
       projectile
       rainbow-delimiters
@@ -233,19 +252,19 @@ Now let's define the packages we'll need to load from ELPA.
       magit
       muse
       markdown-mode
-      python-mode 
-      python-docstring 
-      python-test 
-      pydoc 
+      python-mode
+      python-docstring
+      python-test
+      pydoc
       pyenv-mode
-      pyvenv 
+      pyvenv
       pythonic
-      spice-mode 
+      spice-mode
       arduino-mode
       yaml-mode
       slime
       virtualenvwrapper
-      gnuplot 
+      gnuplot
       gnuplot-mode
       dracula-theme
       posframe
@@ -282,16 +301,16 @@ vendor dir if it's not already present.
     (defun tlc/git-clone-to-vendor-dir (repo-name repo-src)
       (message (concat "Cloning " repo-name " to vendor/" repo-name "..."))
 
-      (unless (file-directory-p (file-truename (concat user-emacs-directory 
+      (unless (file-directory-p (file-truename (concat user-emacs-directory
                                                        "/vendor/" repo-name)))
         (shell-command (format "git clone %s %s"
                                repo-src
-                               (file-truename (concat user-emacs-directory "/vendor/" 
+                               (file-truename (concat user-emacs-directory "/vendor/"
                                                       repo-name))))
 
         (let ((default-directory (file-truename (concat user-emacs-directory "/vendor/"
                                                         repo-name))))
-          (if (or (file-readable-p "Makefile") 
+          (if (or (file-readable-p "Makefile")
                   (file-readable-p "Makefile"))
               (shell-command "make")))))
 
@@ -310,9 +329,16 @@ vendor dir if it's not already present.
 
 *** Shell Integration
 
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Shell Integration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
+
 Set up =exec-path-from-shell= to use the user's PATH environment
 variable. See [[https://github.com/purcell/exec-path-from-shell][https://github.com/purcell/exec-path-from-shell]] for
-details. 
+details.
 
 #+begin_src emacs-lisp
   (when (memq window-system '(mac ns))
@@ -322,6 +348,13 @@ details.
 #+end_src
 
 *** Navigation
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Navigation Settings
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
+
 ***** Uniquify Buffer Names
 
 When several buffers visit identically-named files, Emacs must give
@@ -340,7 +373,7 @@ https://www.gnu.org/software/emacs/manual/html_node/emacs/Uniquify.html
 ***** Recent File Mode
 
 Turn on recent file mode so that you can more easily switch to
-recently edited files when you first start emacs. 
+recently edited files when you first start emacs.
 
 #+begin_src emacs-lisp
   (setq recentf-save-file (concat user-emacs-directory ".recentf"))
@@ -349,7 +382,7 @@ recently edited files when you first start emacs.
   (setq recentf-max-menu-items 40)
 #+end_src
 
-***** Ido Mode 
+***** Ido Mode
 =ido-mode= allows you to more easily navigate choices. For example,
 when you want to switch buffers, ido presents you with a list of
 buffers in the the mini-buffer. As you start to type a buffer's name,
@@ -414,8 +447,15 @@ http://www.emacswiki.org/emacs/Smex
 
 *** UI Customizations
 
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; UI Customization
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
+
 These customizations change the way emacs looks and disable/enable
-some user interface elements. 
+some user interface elements.
 
 I'm used to interacting with Emacs in a terminal, so I don't need a
 lot of the distracting GUI elements.
@@ -474,7 +514,7 @@ Bufler groups buffers to make them easier to navigate.
   ;;     (progn
   ;;       (global-set-key "\C-cb" 'bufler)
 
-  ;;       (setf bufler-groups 
+  ;;       (setf bufler-groups
   ;;             (bufler-defgroups
   ;;              (group
   ;;               ;; Subgroup collecting all named workspaces.
@@ -569,6 +609,8 @@ Increase the font size for better readability.
   (set-face-attribute 'default nil :height 140)
 #+end_src
 
+***** UI Font Selection
+
 This is a whole lot of code to select a good font based on what's
 available on the system.
 
@@ -628,7 +670,7 @@ The first one of these that's found will be used.
   (dimmer-configure-helm)
   (dimmer-mode t)
 
-  (setq dimmer-fraction 0.25)
+  (setq dimmer-fraction 0.35)
   (setq dimmer-watch-frame-focus-events nil)
 #+end_src
 
@@ -642,10 +684,10 @@ window maximized.
   (if window-system
       (if (eq (length (display-monitor-attributes-list)) 1)
           ;; One monitor - make the window shorter and mazimize it
-          (setq initial-frame-alist '((top . 5) (left . 5) (width . 132) 
+          (setq initial-frame-alist '((top . 5) (left . 5) (width . 132)
                                       (height . 28) (fullscreen . maximized)))
         ;; Multiple monitors - taller window, not maximized
-        (setq initial-frame-alist '((top . 15) (left . 15) 
+        (setq initial-frame-alist '((top . 15) (left . 15)
                                     (width . 132) (height . 38))))
     (setq default-frame-alist initial-frame-alist))
 #+end_src
@@ -678,7 +720,7 @@ window maximized.
 For a lot of coding things, Emacs tends to like to split windows
 horizontally. For reasons I don't understand, they call this a
 vertical split. Also, for reasons I don't understand, this behavior is
-shockingly difficult to change. 
+shockingly difficult to change.
 
 This code comes from [[https://emacs.stackexchange.com/questions/39034/prefer-vertical-splits-over-horizontal-ones][Stack Overflow]], and it forces Emacs to split
 windows vertically unless they're small.
@@ -731,6 +773,13 @@ windows vertically unless they're small.
 #+end_src
 
 *** Editing Customizations
+
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Ediitng Customizations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
 
 These customizations affect things related to editing files in
 buffers.
@@ -843,7 +892,7 @@ automatically updated to the current time whenever the file is saved.
     (add-hook 'before-save-hook 'time-stamp))
 #+end_src
 
-***** Enable Hippie Expand 
+***** Enable Hippie Expand
 
 [[http://www.emacswiki.org/emacs/HippieExpand][HippieExpand]] ooks at the word before point and tries to expand it in
 various ways including expanding from a fixed list (like
@@ -875,6 +924,13 @@ By default, C-s runs =isearch-forward=, so this swaps the bindings.
 
 *** Programming Languages
 
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Programming Languages
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
+
 Load and configure modes for various programming languages.
 
 ***** Shell Scripts
@@ -887,7 +943,7 @@ Load and configure modes for various programming languages.
 ***** Emacs-Lisp
 
 Load paredit mode. I have it disabled because it was making editing
-difficult. 
+difficult.
 
 #+begin_src emacs-lisp
   (autoload 'enable-paredit-mode "paredit" "Turn on pseudo-structural editing of Lisp code." t)
@@ -1132,8 +1188,21 @@ Emacs smalltalk-mode customizations.
 #+end_src
 
 *** Gnus
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Gnus
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
 
 *** Org Mode
+
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Org-Mode
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
 
 [[https://orgmode.org/][Org mode]] is Emacs's mode for outlining files in plain text. It started
 out as an organization and notetaking system, but has been massively
@@ -1188,20 +1257,20 @@ Load org-babel (code) extensions for languages we use.
 
   (org-babel-do-load-languages
     'org-babel-load-languages
-    '((dot . t) 
-      (emacs-lisp . t) 
-      (js . t) 
+    '((dot . t)
+      (emacs-lisp . t)
+      (js . t)
       (python . t)
-      (ruby . t) 
-      (shell . t) 
+      (ruby . t)
+      (shell . t)
       (arduino . t)
-      (forth . t) 
-      (latex . t) 
+      (forth . t)
+      (latex . t)
       (perl . t)
-      (eshell . t) 
-      (gnuplot . t) 
-      (clojure . t) 
-      (clojure-literate . t) 
+      (eshell . t)
+      (gnuplot . t)
+      (clojure . t)
+      (clojure-literate . t)
       (spice . t)
       (sql . t)
      )
@@ -1226,7 +1295,7 @@ we need.
 ***** Org File Associations
 
 We'll make org-mode the default for new buffers, as well as for text
-files. 
+files.
 
 #+begin_src emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
@@ -1237,7 +1306,7 @@ files.
 
 We need to locate our =org-life= directory, either from github or
 Dropbox. We prefer the github repo, and will clone it if we can't find
-it. 
+it.
 
 #+begin_src emacs-lisp
   (defvar tlc/org-github-repo nil "Github directory for my org-life files")
@@ -1265,7 +1334,7 @@ Define a function to open our most used files with a keystroke.
 
 #+begin_src emacs-lisp
 
-  (defvar tlc/org-master-files nil 
+  (defvar tlc/org-master-files nil
     "List of files for tlc/open-org-files to open.
 
   File names are relative to org-directory.")
@@ -1318,7 +1387,7 @@ Set a bunch of general settings.
 
 Default startup settings for when we're opening new org files.
 
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
   (setq org-startup-truncated nil)
   (setq org-startup-folded nil)
   (setq org-startup-indented t)
@@ -1676,7 +1745,7 @@ And now we can define the =org-capture-templates= used by
                  :keys "z"
                  :file "master.org" :olp ("Journal")
                  :type entry :datetree t :tree-type week :prepend t
-                 :template 
+                 :template
                  (
                   "********* Capacity Manager                              :CAPACITYMGR:"
                   "*********** TODO Draft SOWs [/]"
@@ -1786,7 +1855,7 @@ And now we can define the =org-capture-templates= used by
                 ("Someday" :keys "S" :file "someday.org" :headline "Inbox"
                  :template "* TODO%c\n%U\n")
 
-                ("Protocol" :keys "p" :file "codex.org" 
+                ("Protocol" :keys "p" :file "codex.org"
                  :template ("* [[%:link][%:description]]"
                             "Captured at: %u"
                             "#+BEGIN_QUOTE"
@@ -1794,7 +1863,7 @@ And now we can define the =org-capture-templates= used by
                             "#+END_QUOTE"
                             ))
 
-                ("Protocol Link" :keys "L" :file "codex.org" 
+                ("Protocol Link" :keys "L" :file "codex.org"
                  :template ("* %? [[%:link][%:description]] "
                             "Captured at: %U"))
 
@@ -1829,7 +1898,7 @@ org-mode. Requires the [[https://github.com/magnars/s.el][s.el]] library and [[h
 
 #+begin_src emacs-lisp
   ;; (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/s"))
-  ;; (add-to-list 'load-path (concat (file-truename user-emacs-directory) 
+  ;; (add-to-list 'load-path (concat (file-truename user-emacs-directory)
   ;;                                 "vendor/org-protocol-capture-html"))
 
   ;; (require 'org-protocol-capture-html)
@@ -1876,6 +1945,7 @@ Define valid refile targets.
                              (nil :maxlevel . 9)
                              (org-agenda-files :maxlevel . 5)
                              ("someday.org" :maxlevel . 5)
+                             ("codex.org" :maxlevel . 3)
                              ))
 #+end_src
 
@@ -2211,7 +2281,7 @@ Define a skeleton for a writing project.
 
 Define a skeleton for org income/expense worksheets.
 
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
   ;; (define-skeleton tlc/org-finance-skeleton
   ;;   (let ((skeleton-month (skeleton-read "Month (0-12): "))
   ;;         (skeleton-year (skeleton-read  "Year: ")))
@@ -2270,7 +2340,7 @@ Set key bindings for the org file skeletons.
 #+end_src
 
 Define helpers for jumping beteen skeleton markers. Markere are
-defined by including =@= characters in the skeletons. 
+defined by including =@= characters in the skeletons.
 
 This came from [[https://www.emacswiki.org/emacs/SkeletonMode][here]].
 
@@ -2363,7 +2433,7 @@ From https://karl-voit.at/2019/11/03/org-projects/.
         (progn
           (cond
            ((string-equal org-state "DOING")
-            (progn 
+            (progn
               (org-clock-in)))
            ((member org-state '("TODO" "WAITING"))
             (progn
@@ -2385,8 +2455,8 @@ From https://karl-voit.at/2019/11/03/org-projects/.
                         "git commit "
                         "-a "
                         "-m "
-                        (shell-quote-argument (concat "Snapshot Commit at " 
-                                                      date-string 
+                        (shell-quote-argument (concat "Snapshot Commit at "
+                                                      date-string
                                                       " from tlc/commit-org-to-git"))))
         (unless dont-push
           (shell-command "git push"))
@@ -2414,7 +2484,7 @@ From https://karl-voit.at/2019/11/03/org-projects/.
 #+begin_src emacs-lisp
 (defun tlc/labtest-exceptions (col-number)
   "Filters an org-mode lab results table for abnormal results."
-  (cl-loop 
+  (cl-loop
    for row in tbl
    if (or (string-equal (nth col-number row) "high **") (string-equal (nth col-number row) "** low"))
    collect row into newtbl
@@ -2510,7 +2580,7 @@ rename it.
 
 Define helper functions to publish the three pieces of the book (front
 matter, main matter, end matter) and rename them appropriately after
-output. 
+output.
 
 #+begin_src emacs-lisp
   (defun tlc/org-publish-transformation2e-fm (plist filename pubdir)
@@ -2536,10 +2606,10 @@ Define the =org-publish-project-alist= to publish the book files for
 this project.
 
 #+begin_src emacs-lisp
-  (add-to-list 'org-publish-project-alist 
+  (add-to-list 'org-publish-project-alist
                '("transformation2e"
-                 :components ( "transformation2e_fm" 
-                               "transformation2e_main" 
+                 :components ( "transformation2e_fm"
+                               "transformation2e_main"
                                "transformation2e_em")))
 
   (add-to-list 'org-publish-project-alist
@@ -2586,7 +2656,7 @@ Set up the org-mode tags we'll use to identify our project plan sections.
   (setq org-export-taskjuggler-report-tag "taskjuggler_report")
 
   (setq org-taskjuggler-default-global-properties
-      (string-join 
+      (string-join
        '(
          ""
          "# Include standard shift definitions"
@@ -2609,11 +2679,11 @@ Build a hook to allow adding content to the generated TaskJuggler file after
 generation.
 
 #+begin_src emacs-lisp
-      (defvar tlc/taskjuggler-prologue-includes nil 
+      (defvar tlc/taskjuggler-prologue-includes nil
         "Files to include at the start of TJ files")
       (defvar tlc/taskjuggler-project-includes nil
         "Files whose contents will be inserted at the end of the project block.")
-      (defvar tlc/taskjuggler-epilogue-includes nil 
+      (defvar tlc/taskjuggler-epilogue-includes nil
         "Files to include at the end of TJ files")
       (defvar tlc/taskjuggler-suppress-insertion-comments t
         "Suppress comments around blocks inserted by the export hook.")
@@ -2640,7 +2710,7 @@ generation.
             (progn
               (unless suppress-comments-p
                 (insert (concat "\n# BEGIN " include-type " includes added by tlc/taskjuggler-export-hook\n")))
-              (mapc (lambda (f) 
+              (mapc (lambda (f)
                       (progn
                         (if insert-contents-p
                           (progn
@@ -2656,31 +2726,31 @@ generation.
         "Add necessary include files to generated taskjuggler files."
         (if (file-readable-p filename)
             (if (find-file filename)
-                (progn 
+                (progn
                   (switch-to-buffer filename)
                   (goto-char (point-min))
-                  (tlc/taskjuggler-export-hook--do-include filename 
-                                                           "Prologue" 
-                                                           tlc/taskjuggler-prologue-includes 
-                                                           nil 
+                  (tlc/taskjuggler-export-hook--do-include filename
+                                                           "Prologue"
+                                                           tlc/taskjuggler-prologue-includes
+                                                           nil
                                                            tlc/taskjuggler-suppress-insertion-comments)
 
                   (goto-char (point-min))
                   (if (tlc/taskjuggler-export-hook--find-end-of-block filename "project")
-                      (tlc/taskjuggler-export-hook--do-include filename 
-                                                               "Project" 
-                                                               tlc/taskjuggler-project-includes 
-                                                               t 
+                      (tlc/taskjuggler-export-hook--do-include filename
+                                                               "Project"
+                                                               tlc/taskjuggler-project-includes
+                                                               t
                                                                tlc/taskjuggler-suppress-insertion-comments))
 
                   (goto-char (point-max))
-                  (tlc/taskjuggler-export-hook--do-include filename 
-                                                           "Epilogue" 
-                                                           tlc/taskjuggler-epilogue-includes 
+                  (tlc/taskjuggler-export-hook--do-include filename
+                                                           "Epilogue"
+                                                           tlc/taskjuggler-epilogue-includes
                                                            nil
                                                            tlc/taskjuggler-suppress-insertion-comments)
 
-                  (let 
+                  (let
                       ((modified (buffer-modified-p)))
                         (progn
                           (if modified
@@ -2721,11 +2791,25 @@ Add some additional attributes to the exporter.
       (org-add-link-type "outlook" #'org-outlook-open)
       ))
 #+end_src
-      
+
 
 *** LaTeX editing
 
-*** Gnu Server 
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; LaTeX Editing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
+
+*** Gnu Server
+
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Gnu Server
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
 
 Make sure the Gnu server is started if it's available.
 
@@ -2736,6 +2820,14 @@ Make sure the Gnu server is started if it's available.
 
 *** Miscellaneous Customizations
 
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Miscellaneous Customizations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
+
+
 ***** Change all yes/no questions to y/n type
 
 #+begin_src emacs-lisp
@@ -2745,7 +2837,7 @@ Make sure the Gnu server is started if it's available.
 ***** Create a New Empty Buffer
 
 If the =*scratch*= buffer doesn't exist, it'll be created. If it does, a new
-buffer of the form untitled-1, Untitled-2, etc. will be created. If the 
+buffer of the form untitled-1, Untitled-2, etc. will be created. If the
 buffer name is not =*scratch*=, you'll be offered a chance to save it.
 
 From [[http://ergoemacs.org/emacs/emacs_new_empty_buffer.html][http://ergoemacs.org/emacs/emacs_new_empty_buffer.html]].
@@ -2755,7 +2847,7 @@ From [[http://ergoemacs.org/emacs/emacs_new_empty_buffer.html][http://ergoemacs.
     "Create a new empty buffer.
 
   If the *scratch* buffer doesn't exist, it'll be created. If it does, a new
-  buffer of the form untitled-1, Untitled-2, etc. will be created. If the 
+  buffer of the form untitled-1, Untitled-2, etc. will be created. If the
   buffer name is not *scratch*, you'll be offered a chance to save it."
     (interactive)
     (if (get-buffer "*scratch*")
@@ -2777,7 +2869,14 @@ From [[http://ergoemacs.org/emacs/emacs_new_empty_buffer.html][http://ergoemacs.
 
 *** customize Settings
 
-Random stuff set by the Emacs customize interface. Could probably be
+#+begin_src emacs-lisp tangle:yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Emacs `customize` settings
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
+
+Random stuff set by the Emacs =customize= interface. Could probably be
 refactored out to somewhere else.
 
 #+begin_src emacs-lisp
@@ -2799,7 +2898,7 @@ refactored out to somewhere else.
               magit tagedit rainbow-delimiters projectile smex
               cider clojure-mode-extra-font-locking
               clojure-mode paredit exec-path-from-shell)))
-   '(show-paren-mode t) 
+   '(show-paren-mode t)
    '(tool-bar-mode nil))
 
   (custom-set-faces

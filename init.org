@@ -1,14 +1,13 @@
-* -*- mode: org; fill-column: 78; -*-
+ -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-08 17:36:15 tammy>
+#+DATE: Time-stamp: <2020-03-08 18:28:36 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
 #+LATEX_HEADER: \usepackage[utf8]{inputenc}
 #+PROPERTY: header-args :tangle yes
 
-*
 * About
 
 This is my Emacs configuration. it is designed to be as platform
@@ -21,9 +20,9 @@ More details about the detangling process are [[*Meta - Detangling][here]].
 
 The master source for this file is [[https://github.com/tammymakesthings/emacs_d][here]].
 
-* Lisp File Header
-
- #+begin_src emacs-lisp tangle:yes
+* Lisp File Header 
+ 
+#+begin_src emacs-lisp tangle:yes
    ;;; -*- mode: emacs-lisp; lexical-binding: t -*-
    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
    ;;;; Emacs Configuration - Tammy Cravit
@@ -69,6 +68,10 @@ the file that is loaded. It looks like this:
   (load-file (concat user-emacs-directory "init.el"))
   ;; finally byte-compile it
   (byte-compile-file (concat user-emacs-directory "init.el"))
+  ;; copy dot_gnus.el to ~/.gnus.el
+  (if (file-readable-p (concat user-emacs-directory "dot-gnus.el"))
+    (copy-file (concat user-emacs-directory "dot-gnus.el")
+             (file-truename "~/.gnus.el") t t t t))
    #+end_src
 
 It tangles the org-file, so that this file is overwritten with the actual
@@ -110,7 +113,11 @@ the =after-save-hook= ensuring to always tangle and byte-compile the
       ;; Avoid running hooks when tangling.
       (let ((prog-mode-hook nil))
         (org-babel-tangle)
-        (byte-compile-file (concat user-emacs-directory "init.el")))))
+        (byte-compile-file (concat user-emacs-directory "init.el"))
+      ;; copy dot_gnus.el to ~/.gnus.el
+      (if (file-readable-p (concat user-emacs-directory "dot-gnus.el"))
+         (copy-file (concat user-emacs-directory "dot-gnus.el")
+                     (file-truename "~/.gnus.el") t t t t)))))
 
   (add-hook 'after-save-hook 'tangle-init)
 #+end_src
@@ -1188,11 +1195,30 @@ Emacs smalltalk-mode customizations.
 #+end_src
 
 *** Gnus
-#+begin_src emacs-lisp tangle:yes
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; Gnus
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+Gnus setup is tangled to =dot-gnus.el=, which is moved to =~/.gnus.el= by the
+file save hook.
+
+#+begin_src emacs-lisp :tangle dot-gnus.el
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;;; Gnus Settings
+  ;;;; AUTO-GENERATED FROM ~/.emacs.d/init.org - OD NOT EDIT DIRECTLY
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (require 'gnus)
+
+  (setq gnus-select-method '(nntp "news.gmane.io"))
+  (setq smtpmail-smtp-server "smtp.gmail.com")
+  (setq smtpmail-smtp-service 587)
+  (setq message-send-mail-function 'smtpmail-send-it) 
+  (setq send-mail-function 'smtpmail-send-it) 
+    
+  (define-key gnus-summary-mode-map "d" 'gnus-summary-mark-as-expirable)
+
+  (defun my-message-mode-setup ()
+    (setq fill-column 72)
+    (turn-on-auto-fill))
+  (add-hook 'message-mode-hook 'my-message-mode-setup)
 #+end_src
 
 *** Org Mode

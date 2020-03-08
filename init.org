@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-08 18:28:36 tammy>
+#+DATE: Time-stamp: <2020-03-08 18:32:30 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}

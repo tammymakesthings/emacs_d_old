@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-08 18:32:30 tammy>
+#+DATE: Time-stamp: <2020-03-09 11:21:58 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -689,14 +689,16 @@ window maximized.
 
 #+begin_src emacs-lisp
   (if window-system
+    (progn
       (if (eq (length (display-monitor-attributes-list)) 1)
           ;; One monitor - make the window shorter and mazimize it
           (setq initial-frame-alist '((top . 5) (left . 5) (width . 132)
-                                      (height . 28) (fullscreen . maximized)))
+                                      (height . 28) 
+                                      (fullscreen . maximized)))
         ;; Multiple monitors - taller window, not maximized
         (setq initial-frame-alist '((top . 15) (left . 15)
                                     (width . 132) (height . 38))))
-    (setq default-frame-alist initial-frame-alist))
+      (setq default-frame-alist initial-frame-alist)))
 #+end_src
 
 ***** OS kill ring/clipboard integration
@@ -1235,6 +1237,7 @@ out as an organization and notetaking system, but has been massively
 extended to also allow publishing, literate programming, and all sorts
 of other stuff. As you'll see, it's VERY customizable.
 
+***** Loading Org Mode
 We load =org-mode= from our =vendor/= tree.
 
 #+begin_src emacs-lisp
@@ -1356,38 +1359,6 @@ Set the default notes file.
   (setq org-default-notes-file (file-truename (concat org-directory "/master.org")))
 #+end_src
 
-Define a function to open our most used files with a keystroke.
-
-#+begin_src emacs-lisp
-
-  (defvar tlc/org-master-files nil
-    "List of files for tlc/open-org-files to open.
-
-  File names are relative to org-directory.")
-
-  (defun tlc/open-org-files ()
-    "Open the default set of org files.
-
-  The default set of org files is specified by tlc/org-master-files."
-    (interactive)
-    (if (length tlc/org-master-files)
-        (progn
-          (let (value)
-            (dolist (elt tlc/org-master-files value)
-              (find-file-noselect (concat org-directory "/" elt))))
-          (switch-to-buffer "master.org"))
-      (message "Add your master org files to tlc/org-master-files and try again")))
-
-  (setq tlc/org-master-files '(
-                               "master.org"
-;                               "journal.org"
-                               "proj_eos.org"
-                               "codex.org"))
-
-  (global-set-key (kbd "<f12>") 'tlc/open-org-files)
-  (global-set-key "\C-c=" 'tlc/open-org-files)
-#+end_src
-
 Set a bunch of general settings.
 
 #+begin_src emacs-lisp
@@ -1425,6 +1396,43 @@ Enable =font-lock-mode= and =fill-mode= in org files.
 #+begin_src emacs-lisp
   (add-hook 'org-mode-hook 'turn-on-font-lock)
   (add-hook 'org-mode-hook 'auto-fill-mode)
+#+end_src
+
+***** Load Most-Used Org Files
+
+Define a function to open our most used files with a keystroke.
+
+#+begin_src emacs-lisp
+
+  (defvar tlc/org-master-files nil
+    "List of files for tlc/open-org-files to open.
+
+    File names are relative to org-directory.")
+
+  (defun tlc/open-org-files ()
+    "Open the default set of org files.
+
+    The default set of org files is specified by tlc/org-master-files."
+    (interactive)
+
+    (let ((default-directory org-directory))
+      (shell-command "git pull"))
+
+    (if (length tlc/org-master-files)
+        (progn
+          (let (value)
+            (dolist (elt tlc/org-master-files value)
+              (find-file-noselect (concat org-directory "/" elt))))
+          (switch-to-buffer "master.org"))
+      (message "Add your master org files to tlc/org-master-files and try again")))
+
+    (setq tlc/org-master-files '(
+                                 "master.org"
+                                 "proj_eos.org"
+                                 "codex.org"))
+
+    (global-set-key (kbd "<f12>") 'tlc/open-org-files)
+    (global-set-key "\C-c=" 'tlc/open-org-files)
 #+end_src
 
 ***** General Helper Functions
@@ -1529,13 +1537,28 @@ file, rather than flattening. See
 Set general org-agenda options.
 
 #+begin_src emacs-lisp
-  (setq org-deadline-warning-days 30)
+  (setq org-deadline-warning-days 3)
   (setq org-agenda-skip-additional-timestamps-same-entry t)
   (setq org-agenda-skip-scheduled-if-done t)
   (setq org-agenda-skip-deadline-if-done t)
   (setq org-agenda-include-all-todo t)
   (setq org-agenda-include-diary t)
   (setq org-agenda-tags-todo-honor-ignore-options t)
+  (setq org-agenda-todo-list-sublevels nil)
+#+end_src
+
+If we have multiple monitors, open the agenda view in a separate frame. If we
+don't, open the agenda in the current window and restore window state when
+it's closed.
+
+#+begin_src emacs-lisp
+  (if (eq (length (display-monitor-attributes-list)) 1)
+    (progn
+      (setq org-agenda-window-setup 'current-window)
+      (setq org-agenda-restore-windows-after-quit t))
+   (progn
+    (setq org-agenda-window-setup 'other-frame)
+    (setq org-agenda-restore-windows-after-quit nil)))
 #+end_src
 
 Specify our =org-agenda-files=.
@@ -1543,10 +1566,23 @@ Specify our =org-agenda-files=.
 #+begin_src emacs-lisp
   (setq org-agenda-files (list
                            (concat org-directory "/master.org")
-                           (concat org-directory "/journal.org")
                            (concat org-directory "/calls.org")
                            (concat org-directory "/proj_eos.org")
+                           (concat org-directory "/personal.org")
                            ))
+
+  (defvar tlc/org-personal-agenda-files nil "Personal agenda files for filtered views.")
+  (defvar tlc/org-work-agenda-files nil "Work agenda files for filtered views.")
+
+  (setq tlc/org-personal-agenda-files (list
+                           (concat org-directory "/calls.org")
+                           (concat org-directory "/personal.org")))
+
+  (setq tlc/org-work-agenda-files (list
+                           (concat org-directory "/master.org")
+                           (concat org-directory "/calls.org")
+                           (concat org-directory "/proj_eos.org")))
+
 #+end_src
 
 Helper function for =org-agenda-custom-commands= to skip a subtree if
@@ -1570,20 +1606,84 @@ Define custom agenda views.
 #+begin_src emacs-lisp
   (setq org-agenda-custom-commands
         '(
-          ("c" "Simple agenda view"
+          ("t" "Today's Agenda - Combined"
            (
+            (agenda "" ((org-agenda-overriding-title "*** This Week's Agenda ***")))
             (tags "PRIORITY=\"A\""
-                  ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                   (org-agenda-overriding-header "High-priority unfinished tasks:")))
-            (agenda "")
-            (alltodo ""
-                     ((org-agenda-skip-function
-                       '(or (air/org-skip-subtree-if-priority ?A)
-                            (org-agenda-skip-if nil '(scheduled deadline))))))))
+                (
+                 (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                 (org-agenda-overriding-header "*** High Priority Tasks ***")
+                 (org-agenda-sorting-strategy '(priority-down))
+                 ))
+            (todo "TODO|DOING" 
+                  (
+                   (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                   (org-agenda-overriding-header "*** Active Tasks ***")
+                   (org-agenda-sorting-strategy '(priority-down))
+                   ))
+            (todo "WAITING|DELEGATED" 
+                  (
+                   (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                   (org-agenda-overriding-header "*** Delegated/Waiting Tasks ***")
+                   (org-agenda-sorting-strategy '(priority-down))
+                 ))
+            ))
+          ("w" "Today's Agenda - Work"
+           (
+            (agenda "" ((org-agenda-overriding-title "*** This Week's Agenda ***")))
+            (tags "PRIORITY=\"A\""
+                (
+                 (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                 (org-agenda-overriding-header "*** High Priority Tasks ***")
+                 (org-agenda-sorting-strategy '(priority-down))
+                 (org-agenda-files tlc/org-work-agenda-files)
+                 ))
+            (todo "TODO|DOING" 
+                  (
+                   (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                   (org-agenda-overriding-header "*** Active Tasks ***")
+                   (org-agenda-sorting-strategy '(priority-down))
+                   (org-agenda-files tlc/org-work-agenda-files)
+                   ))
+            (todo "WAITING|DELEGATED" 
+                  (
+                   (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                   (org-agenda-overriding-header "*** Delegated/Waiting Tasks ***")
+                   (org-agenda-sorting-strategy '(priority-down))
+                   (org-agenda-files tlc/org-work-agenda-files)
+                   ))
+            ))
+           ("p" "Today's Agenda - Personal"
+            (
+             (agenda "" ((org-agenda-overriding-title "*** This Week's Agenda ***")))
+             (tags "PRIORITY=\"A\""
+                   (
+                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                    (org-agenda-overriding-header "*** High Priority Tasks ***")
+                    (org-agenda-sorting-strategy '(priority-down))
+                    (org-agenda-files tlc/org-personal-agenda-files)
+                    ))
+             (todo "TODO|DOING" 
+                   (
+                    (org-agenda-overriding-header "*** Active Tasks ***")
+                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                    (org-agenda-sorting-strategy '(priority-down))
+                    (org-agenda-files tlc/org-personal-agenda-files)
+                    ))
+             (todo "WAITING|DELEGATED" 
+                   (
+                    (org-agenda-overriding-header "*** Delegated/Waiting Tasks ***")
+                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                    (org-agenda-sorting-strategy '(priority-down))
+                    (org-agenda-files tlc/org-personal-agenda-files)
+                    ))
+            ))
+
           ("d" "Upcoming deadlines" agenda ""
-           ((org-agenda-time-grid nil)
-            (org-deadline-warning-days 365)
-            (org-agenda-entry-types '(:deadline))))
+           ((org-agenda-entry-types '(:deadline))
+            (org-agenda-span 1)
+            (org-deadline-warning-days 60)
+            (org-agenda-time-grid nil)))
 
           ("Q" . "Custom Queries")
           ("Qa" "Archive search" search ""
@@ -1883,7 +1983,7 @@ And now we can define the =org-capture-templates= used by
 
                 ("Protocol" :keys "p" :file "codex.org"
                  :template ("* [[%:link][%:description]]"
-                            "Captured at: %u"
+                            "Captured at: %u"                       
                             "#+BEGIN_QUOTE"
                             "%i"
                             "#+END_QUOTE"

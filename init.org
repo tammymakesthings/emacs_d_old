@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-10 13:23:35 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-10 14:52:45 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -282,6 +282,9 @@ Now let's define the packages we'll need to load from ELPA.
       org-capture-pop-frame
       auctex
       doom-themes
+      page-break-lines
+      dashboard
+      all-the-icons
       )
     )
 #+end_src
@@ -351,6 +354,7 @@ details.
 #+end_src
 
 *** Navigation
+
 #+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Navigation Settings
@@ -865,6 +869,37 @@ Enable tilt (side to side) scrolling with the mouse wheel (or touchpad).
     (progn
       (setq mouse-wheel-flip-direction t)
       (setq mouse-wheel-tilt-scroll t)))
+#+end_src
+
+***** Emacs Dashboard
+
+[[https://github.com/emacs-dashboard/emacs-dashboard/][emacs-dashboard]] is an extensible emacs startup screen.
+
+Load the dashboard.
+
+#+begin_src emacs-lisp
+  (require 'dashboard)
+
+  (setq dashboard-banner-logo-title "Welcome to Emacs Dashboard")
+  (setq dashboard-startup-banner 'logo)
+  (setq dashboard-center-content t)
+  (setq dashboard-show-shortcuts nil)
+  (setq dashboard-items '((recents   . 0)
+                          (bookmarks . 5)
+                          (projects  . 5)
+                          (agenda    . 5)
+                          (registers . 0)))
+  (setq dashboard-set-heading-icons t)
+  (setq dashboard-set-file-icons t)
+  (setq dashboard-set-navigator t)
+  (setq show-week-agenda-p t)
+  (dashboard-setup-startup-hook)
+#+end_src
+
+Configure the dashboard to show in new frames created by =emacsclient=.
+
+#+begin_src emacs-lisp
+  (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
 #+end_src
 
 *** Editing Customizations

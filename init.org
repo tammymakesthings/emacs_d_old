@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-10 14:56:13 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-10 15:05:04 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -681,18 +681,17 @@ Load the [[https://github.com/hlissner/emacs-doom-themes][doom-themes]] system i
 #+begin_src emacs-lisp :tangle yes
   (setq doom-themes-enable-bold t)
   (setq doom-themes-enable-italic t)
-  (load-theme 'doom-vibrant t)
+  (load-theme 'doom-challenger-deep t)
 
   (doom-themes-visual-bell-config)
   (doom-themes-org-config)
   (setq nlinum-highlight-current-line t)
-
 #+end_src
 
 Increase the font size for better readability.
 
 #+begin_src emacs-lisp
-  (set-face-attribute 'default nil :height 120)
+  (set-face-attribute 'default nil :height 110)
 #+end_src
 
 ***** UI Font Selection
@@ -1123,7 +1122,7 @@ CamelCasedTokens such as Java class names.
 
 ;; A little more syntax highlighting
 (require 'clojure-mode-extra-font-locking)
-(set-face-background hl-line-face "grey20")
+
 ;; syntax hilighting for midje
 (add-hook 'clojure-mode-hook
           (lambda ()
@@ -1929,7 +1928,7 @@ Define font faces for todo keyword states.
 
 Change the coloring of org code blocks.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (defface org-block-begin-line
     '((t (:underline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF")))
     "Face used for the line delimiting the begin of source blocks."

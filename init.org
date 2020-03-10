@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-10 13:08:00 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-10 13:23:35 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -281,6 +281,7 @@ Now let's define the packages we'll need to load from ELPA.
       coffee-mode
       org-capture-pop-frame
       auctex
+      doom-themes
       )
     )
 #+end_src
@@ -652,12 +653,18 @@ Bufler groups buffers to make them easier to navigate.
 Read [[http://batsov.com/articles/2012/02/19/color-theming-in-emacs-reloaded/][this article]] for a great explanation of emacs color themes. A
 much more technical explanation of the theme system can be found [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Custom-Themes.html][here]].
 
-#+begin_src emacs-lisp
+Initialize the theme system.
+#+begin_src emacs-lisp :tangle yes
   (unless (file-directory-p "~/.emacs.d/themes")
     (make-directory "~/.emacs.d/themes"))
 
   (add-to-list 'custom-theme-load-path "~/.emacs.d/themes")
   (add-to-list 'load-path "~/.emacs.d/themes")
+#+end_src
+
+Load the [[https://draculatheme.com/emacs/][dracula]] theme if this block is tangled.
+
+#+begin_src emacs-lisp :tangle no
   (load-theme 'dracula t)
 
   (require 'hl-line)
@@ -665,10 +672,23 @@ much more technical explanation of the theme system can be found [[https://www.g
   (set-face-background hl-line-face "grey20")
 #+end_src
 
+Load the [[https://github.com/hlissner/emacs-doom-themes][doom-themes]] system if this block is tangled.
+
+#+begin_src emacs-lisp :tangle yes
+  (setq doom-themes-enable-bold t)
+  (setq doom-themes-enable-italic t)
+  (load-theme 'doom-vibrant t)
+
+  (doom-themes-visual-bell-config)
+  (doom-themes-org-config)
+  (setq nlinum-highlight-current-line t)
+
+#+end_src
+
 Increase the font size for better readability.
 
 #+begin_src emacs-lisp
-  (set-face-attribute 'default nil :height 140)
+  (set-face-attribute 'default nil :height 120)
 #+end_src
 
 ***** UI Font Selection

@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-10 12:47:58 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-10 12:59:59 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1362,7 +1362,7 @@ Load org-babel (code) extensions for languages we use.
       (spice . t)
       (sql . t)
      )
-    )
+    )    
 #+end_src
 
 Since version 8, Org uses a modular exporter. Load the exporter pieces
@@ -1381,6 +1381,22 @@ we need.
 
 #+begin_src emacs-lisp
 (setq org-export-backends '(org latex taskjuggler publish))
+#+end_src
+
+***** Org/WSL Fix
+
+Under Windows (especially with WSL) =org-open-file= will use
+=start-proces-shell-command=. This can cause 100% CPU and blocking. We can fix
+this by using =advice-add= to advise =org-open-file= to use
+=call-process-shell-command= instead. This is from [[https://vxlabs.com/2020/03/07/patch-emacs-org-open-file-using-advice/][here]].
+
+#+begin_src emacs-lisp :tangle yes
+  (if (eq system-type 'windows-nt)
+      (progn
+        (defun wsl-fix-org-open-file (orig-org-open-file &rest args)
+          (cl-letf (((symbol-function 'start-process-shell-command) #'call-process-shell-command))
+            (apply orig-org-open-file args)))
+        (advice-add #'org-open-file :around #'wsl-fix-org-open-file)))
 #+end_src
 
 ***** Org File Associations

@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-09 11:21:58 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-10 10:51:22 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -22,7 +22,7 @@ The master source for this file is [[https://github.com/tammymakesthings/emacs_d
 
 * Lisp File Header 
  
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
    ;;; -*- mode: emacs-lisp; lexical-binding: t -*-
    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
    ;;;; Emacs Configuration - Tammy Cravit
@@ -56,23 +56,25 @@ When this configuration is loaded for the first time, the ~init.el~ is
 the file that is loaded. It looks like this:
 
 #+begin_src emacs-lisp :tangle init.el.firstrun
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; This file replaces itself with the actual configuration at first run.
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   ;; We can't tangle without org!
   (require 'org)
-  ;; Open the configuration
-  (find-file (concat user-emacs-directory "init.org"))
-  ;; tangle it
+
+  (defvar tlc/init-org-file (concat user-emacs-directory "init.org"))
+  (defvar tlc/init-el-file  (concat user-emacs-directory "init.el"))
+
+  (find-file tlc/init-org-file)
   (org-babel-tangle)
-  ;; load it
-  (load-file (concat user-emacs-directory "init.el"))
-  ;; finally byte-compile it
-  (byte-compile-file (concat user-emacs-directory "init.el"))
-  ;; copy dot_gnus.el to ~/.gnus.el
+  (load-file tlc/init-el-file)
+  (byte-compile-file tlc/init-el-file)
+
   (if (file-readable-p (concat user-emacs-directory "dot-gnus.el"))
-    (copy-file (concat user-emacs-directory "dot-gnus.el")
-             (file-truename "~/.gnus.el") t t t t))
-   #+end_src
+      (copy-file (concat user-emacs-directory "dot-gnus.el")
+                 (file-truename "~/.gnus.el") t t t t))
+#+end_src
 
 It tangles the org-file, so that this file is overwritten with the actual
 configuration.
@@ -105,15 +107,18 @@ the =after-save-hook= ensuring to always tangle and byte-compile the
 ;; Automatically tangle init.org on save to produce init.el
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+  (defvar tlc/init-org-file (concat user-emacs-directory "init.org"))
+  (defvar tlc/init-el-file  (concat user-emacs-directory "init.el"))
+
   (defun tangle-init ()
     "If the current buffer is 'init.org' the code-blocks are
   tangled, and the tangled file is compiled."
     (when (equal (buffer-file-name)
-                 (expand-file-name (concat user-emacs-directory "init.org")))
+                 (expand-file-name tlc/init-org-file ))
       ;; Avoid running hooks when tangling.
       (let ((prog-mode-hook nil))
         (org-babel-tangle)
-        (byte-compile-file (concat user-emacs-directory "init.el"))
+        (byte-compile-file tlc/init-el-file)
       ;; copy dot_gnus.el to ~/.gnus.el
       (if (file-readable-p (concat user-emacs-directory "dot-gnus.el"))
          (copy-file (concat user-emacs-directory "dot-gnus.el")
@@ -147,7 +152,7 @@ it. However, I do make the following assumptions:
 
 *** Preliminaries
 
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Preliminary Configuration Items
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -172,7 +177,7 @@ Set some variables to identify who I am.
 
 *** Package Installation
 
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Packaging System Setup/Package Installation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -205,8 +210,8 @@ Load the packaging system and set up repositories.
                           ("gnu"          . "http://elpa.gnu.org/packages/")
                           ("melpa"        . "http://melpa.milkbox.net/packages/")
                           ("melpa-stable" . "http://stable.melpa.org/packages/")))
-  (add-to-list 'package-pinned-packages '(cider              . "melpa-stable") t)
-  (add-to-list 'package-pinned-packages '(magit              . "melpa-stable") t)
+  (add-to-list 'package-pinned-packages '(cider . "melpa-stable") t)
+  (add-to-list 'package-pinned-packages '(magit . "melpa-stable") t)
 #+end_src
 
 Now we need to activate packages. Do this first so the packages are
@@ -228,11 +233,7 @@ off for this because TLS is disabled.
 
 #+begin_src emacs-lisp
   (setq package-check-signature nil)
-#+end_src
 
-Set the package manager loaded and ready.
-
-#+begin_src emacs-lisp
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'use-package))
@@ -277,6 +278,9 @@ Now let's define the packages we'll need to load from ELPA.
       posframe
       dash
       dimmer
+      coffee-mode
+      org-capture-pop-frame
+      auctex
       )
     )
 #+end_src
@@ -321,22 +325,13 @@ vendor dir if it's not already present.
                   (file-readable-p "Makefile"))
               (shell-command "make")))))
 
-  ;; Removing these because we're making them git submodules instead.
-  ;; (tlc/git-clone-to-vendor-dir "org" "https://github.com/bzg/org-mode.git")
-  ;; (tlc/git-clone-to-vendor-dir "doct" "https://github.com/progfolio/doct.git")
-  ;; (tlc/git-clone-to-vendor-dir "ol-get" "https://gitlab.com/xeijin-dev/ol-get.git")
-  ;; (tlc/git-clone-to-vendor-dir "org-jekyll" "https://github.com/juanre/org-jekyll.git")
-  ;; (tlc/git-clone-to-vendor-dir "ts" "https://github.com/alphapapa/ts.el.git")
-  ;; (tlc/git-clone-to-vendor-dir "dash" "https://github.com/magnars/dash.el.git")
-  ;; (tlc/git-clone-to-vendor-dir "bufler" "https://github.com/alphapapa/bufler.el.git")
-
   (add-to-list 'load-path (file-truename (concat user-emacs-directory "/vendor")))
   (add-to-list 'load-path (file-truename (concat user-emacs-directory "/vendor/ts")))
 #+end_src
 
 *** Shell Integration
 
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Shell Integration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -355,7 +350,7 @@ details.
 #+end_src
 
 *** Navigation
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Navigation Settings
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -398,14 +393,14 @@ typed in
 
 http://www.emacswiki.org/emacs/InteractivelyDoThings
 
-#+begin_src emacs-lisp tangle:no
-  ; (ido-mode t)
-  ; (setq ido-enable-flex-matching t)
-  ; (setq ido-use-filename-at-point nil)
-  ; (setq ido-auto-merge-work-directories-length -1)
-  ; (setq ido-use-virtual-buffers t)
-  ; (ido-ubiquitous-mode t)
-  ; (ido-everywhere t)
+#+begin_src emacs-lisp :tangle no
+  (ido-mode t)
+  (setq ido-enable-flex-matching t)
+  (setq ido-use-filename-at-point nil)
+  (setq ido-auto-merge-work-directories-length -1)
+  (setq ido-use-virtual-buffers t)
+  (ido-ubiquitous-mode t)
+  (ido-everywhere t)
 #+end_src
 
 ***** Key Binding - Buffer List
@@ -430,7 +425,7 @@ http://www.emacswiki.org/emacs/Smex
 ***** Projectile - Directory Project Management
 
 #+begin_src emacs-lisp
-  (projectile-global-mode)
+  (projectile-mode t)
 #+end_src
 
 ***** Magit - Git UI
@@ -454,7 +449,7 @@ http://www.emacswiki.org/emacs/Smex
 
 *** UI Customizations
 
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; UI Customization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -464,6 +459,20 @@ http://www.emacswiki.org/emacs/Smex
 These customizations change the way emacs looks and disable/enable
 some user interface elements.
 
+Set a variable to be the number of displays on the system. We use this for
+adjusting frame sizes, determining when things pup up in a new frame, etc.
+
+#+begin_src emacs-lisp
+    (defvar tlc/number-of-displays
+      (if window-system
+        (length (display-monitor-attributes-list))
+       0)
+      "The number of monitors on the system. 0 if running in TTY mode.
+
+  Note: This variable does NOT update if the system is
+  docked/undocked. It is only set at Emacs startup.")
+
+#+end_src
 I'm used to interacting with Emacs in a terminal, so I don't need a
 lot of the distracting GUI elements.
 
@@ -509,76 +518,76 @@ Diable the terminal bell.
 
 Bufler groups buffers to make them easier to navigate.
 
-#+begin_src emacs-lisp tangle:no
+#+begin_src emacs-lisp :tangle no
   (add-to-list 'load-path (file-truename (concat user-emacs-directory "/vendor/dash")))
   (add-to-list 'load-path (file-truename (concat user-emacs-directory "/vendor/bufler")))
 
-  ;; (require 'magit)
-  ;; (require 'magit-section)
-  ;; (require 'bufler)
+  (require 'magit)
+  (require 'magit-section)
+  (require 'bufler)
 
-  ;; (if (fboundp 'bufler)
-  ;;     (progn
-  ;;       (global-set-key "\C-cb" 'bufler)
+  (if (fboundp 'bufler)
+      (progn
+        (global-set-key "\C-cb" 'bufler)
 
-  ;;       (setf bufler-groups
-  ;;             (bufler-defgroups
-  ;;              (group
-  ;;               ;; Subgroup collecting all named workspaces.
-  ;;               (auto-workspace))
-  ;;              (group
-  ;;               ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
-  ;;               (group-or "*Help/Info*"
-  ;;                         (mode-match "*Help*" (rx bos "help-"))
-  ;;                         (mode-match "*Info*" (rx bos "info-"))))
-  ;;              (group
-  ;;               ;; Subgroup collecting all special buffers (i.e. ones that are not
-  ;;               ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
-  ;;               ;; through to other groups, so they end up grouped with their project buffers).
-  ;;               (group-and "*Special*"
-  ;;                          (lambda (buffer)
-  ;;                                         ;                             (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
-  ;;                                         ;                                                 buffer)
-  ;;                            (funcall (mode-match "Dired" (rx bos "dired"))
-  ;;                                     buffer)
-  ;;                            (funcall (auto-file) buffer))
-  ;;                          "*Special*")))
-  ;;             (group
-  ;;              ;; Subgroup collecting these "special special" buffers
-  ;;              ;; separately for convenience.
-  ;;              (name-match "**Special**"
-  ;;                          (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace") "*")))
-  ;;             (group
-  ;;              ;; Subgroup collecting all other Magit buffers, grouped by directory.
-  ;;                                         ;               (mode-match "*Magit* (non-status)" (rx bos (or "magit" "forge") "-"))
-  ;;              (auto-directory))
-  ;;             ;; Subgroup for Helm buffers.
-  ;;             (mode-match "*Helm*" (rx bos "helm-"))
-  ;;             ;; Remaining special buffers are grouped automatically by mode.
-  ;;             (auto-mode))
-  ;;       ;; All buffers under "~/.emacs.d" (or wherever it is).
-  ;;       (dir user-emacs-directory)
-  ;;                  (group
-  ;;                   ;; Subgroup collecting buffers in `org-directory' (or "~/org" if
-  ;;                   ;; `org-directory' is not yet defined).
-  ;;                   (dir (if (bound-and-true-p org-directory)
-  ;;                            org-directory
-  ;;                          "~/org-life"))
-  ;;                   (group
-  ;;                    ;; Subgroup collecting indirect Org buffers, grouping them by file.
-  ;;                    ;; This is very useful when used with `org-tree-to-indirect-buffer'.
-  ;;                    (auto-indirect)
-  ;;                    (auto-file))
-  ;;                   ;; Group remaining buffers by whether they're file backed, then by mode.
-  ;;                   (group-not "*special*" (auto-file))
-  ;;                   (auto-mode))
-  ;;                  (group
-  ;;                   ;; Subgroup collecting buffers in a version-control project,
-  ;;                   ;; grouping them by directory.
-  ;;                   (auto-project))
-  ;;                  ;; Group remaining buffers by directory, then major mode.
-  ;;                  (auto-directory)
-  ;;                  (auto-mode)))))
+        (setf bufler-groups
+              (bufler-defgroups
+               (group
+                ;; Subgroup collecting all named workspaces.
+                (auto-workspace))
+               (group
+                ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
+                (group-or "*Help/Info*"
+                          (mode-match "*Help*" (rx bos "help-"))
+                          (mode-match "*Info*" (rx bos "info-"))))
+               (group
+                ;; Subgroup collecting all special buffers (i.e. ones that are not
+                ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
+                ;; through to other groups, so they end up grouped with their project buffers).
+                (group-and "*Special*"
+                           (lambda (buffer)
+                                          ;                             (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
+                                          ;                                                 buffer)
+                             (funcall (mode-match "Dired" (rx bos "dired"))
+                                      buffer)
+                             (funcall (auto-file) buffer))
+                           "*Special*")))
+              (group
+               ;; Subgroup collecting these "special special" buffers
+               ;; separately for convenience.
+               (name-match "**Special**"
+                           (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace") "*")))
+              (group
+               ;; Subgroup collecting all other Magit buffers, grouped by directory.
+                                          ;               (mode-match "*Magit* (non-status)" (rx bos (or "magit" "forge") "-"))
+               (auto-directory))
+              ;; Subgroup for Helm buffers.
+              (mode-match "*Helm*" (rx bos "helm-"))
+              ;; Remaining special buffers are grouped automatically by mode.
+              (auto-mode))
+        ;; All buffers under "~/.emacs.d" (or wherever it is).
+        (dir user-emacs-directory)
+                   (group
+                    ;; Subgroup collecting buffers in `org-directory' (or "~/org" if
+                    ;; `org-directory' is not yet defined).
+                    (dir (if (bound-and-true-p org-directory)
+                             org-directory
+                           "~/org-life"))
+                    (group
+                     ;; Subgroup collecting indirect Org buffers, grouping them by file.
+                     ;; This is very useful when used with `org-tree-to-indirect-buffer'.
+                     (auto-indirect)
+                     (auto-file))
+                    ;; Group remaining buffers by whether they're file backed, then by mode.
+                    (group-not "*special*" (auto-file))
+                    (auto-mode))
+                   (group
+                    ;; Subgroup collecting buffers in a version-control project,
+                    ;; grouping them by directory.
+                    (auto-project))
+                   ;; Group remaining buffers by directory, then major mode.
+                   (auto-directory)
+                   (auto-mode)))))
 #+end_src
 
 ***** Show Line Numbers
@@ -690,7 +699,7 @@ window maximized.
 #+begin_src emacs-lisp
   (if window-system
     (progn
-      (if (eq (length (display-monitor-attributes-list)) 1)
+      (if (eq tlc/number-of-displays 1)
           ;; One monitor - make the window shorter and mazimize it
           (setq initial-frame-alist '((top . 5) (left . 5) (width . 132)
                                       (height . 28) 
@@ -705,10 +714,10 @@ window maximized.
 
 #+begin_src emacs-lisp
   (setq ;; makes killing/yanking interact with the clipboard
-        x-select-enable-clipboard t
+        select-enable-clipboard t
 
         ;; I'm actually not sure what this does but it's recommended?
-        x-select-enable-primary t
+        select-enable-primary t
 
         ;; Save clipboard strings into kill ring before replacing them.
         ;; When one selects something in another program to paste it into Emacs,
@@ -783,7 +792,7 @@ windows vertically unless they're small.
 
 *** Editing Customizations
 
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Ediitng Customizations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -831,9 +840,11 @@ Don't use hard tabs.
   (defun die-tabs ()
     (interactive)
     (set-variable 'tab-width 2)
-    (mark-whole-buffer)
-    (untabify (region-beginning) (region-end))
-    (keyboard-quit))
+    (save-excursion
+      (push-mark (point))
+      (push-mark (point-max) nil t)
+      (goto-char (point-min))
+      (untabify (region-beginning) (region-end))))
 #+end_src
 
 Bind the F7 key to execute ~eval-region~ since I do this a lot when
@@ -933,7 +944,7 @@ By default, C-s runs =isearch-forward=, so this swaps the bindings.
 
 *** Programming Languages
 
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Programming Languages
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1091,37 +1102,38 @@ Setup the Python imenu.
 
 Define our =python-mode= hooks and key bindings.
 #+begin_src emacs-lisp
-(defun my-python-hooks()
-    (interactive)
-    (setq tab-width     4
-          python-indent 4
-          python-shell-interpreter "ipython"
-          python-shell-interpreter-args "-i")
-    (if (string-match-p "rita" (or (buffer-file-name) ""))
-        (setq indent-tabs-mode t)
-      (setq indent-tabs-mode nil)
-    )
-    (add-to-list
-        'imenu-generic-expression
-        '("Sections" "^#### \\[ \\(.*\\) \\]$" 1))
-    (setq imenu-create-index-function 'my-merge-imenu)
-    ;; pythom mode keybindings
-    (define-key python-mode-map (kbd "M-.") 'jedi:goto-definition)
-    (define-key python-mode-map (kbd "M-,") 'jedi:goto-definition-pop-marker)
-    (define-key python-mode-map (kbd "M-/") 'jedi:show-doc)
-    (define-key python-mode-map (kbd "M-?") 'helm-jedi-related-names)
-    ;; end python mode keybindings
 
-    (eval-after-load "company"
-        '(progn
-            (unless (member 'company-jedi (car company-backends))
-                (setq comp-back (car company-backends))
-                (push 'company-jedi comp-back)
-                (setq company-backends (list comp-back)))
-            )))
+    (defun tlc/python-hooks ()
+      "Hooks for python setup"
+      (interactive)
+      (setq python-indent-offset 4)
+      (setq tab-width 4)
+      (setq python-shell-interpreter "ipython")
+      (setq python-shell-interpreter-args "-i")
+      (if (string-match-p "rita" (or (buffer-file-name) ""))
+          (setq indent-tabs-mode t)
+        (setq indent-tabs-mode nil))
+      (add-to-list
+       'imenu-generic-expression
+       '("Sections" "^#### \\[ \\(.*\\) \\]$" 1))
+      (setq imenu-create-index-function 'my-merge-imenu)
 
-(add-hook 'python-mode-hook 'my-python-hooks)
-;; End Python mode
+      (define-key python-mode-map (kbd "M-.") 'jedi:goto-definition)
+      (define-key python-mode-map (kbd "M-,") 'jedi:goto-definition-pop-marker)
+      (define-key python-mode-map (kbd "M-/") 'jedi:show-doc)
+      (define-key python-mode-map (kbd "M-?") 'helm-jedi-related-names))
+
+  (eval-after-load "python-mode"
+    (add-hook 'python-mode-hook 'tlc/python-hooks))
+
+  (eval-after-load "company"
+    '(progn
+       (unless (member 'company-jedi (car company-backends))
+         (setq comp-back (car company-backends))
+         (push 'company-jedi comp-back)
+         (setq company-backends (list comp-back)))
+       ))
+    ;; End Python mode
 #+end_src
 
 ***** Javascript
@@ -1144,14 +1156,16 @@ And settings for Coffeescript editing.
 
 #+begin_src emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.coffee.erb$" . coffee-mode))
-  (add-hook 'coffee-mode-hook 'subword-mode)
-  (add-hook 'coffee-mode-hook 'highlight-indentation-current-column-mode)
-  (add-hook 'coffee-mode-hook
-            (defun coffee-mode-newline-and-indent ()
-              (define-key coffee-mode-map "\C-j" 'coffee-newline-and-indent)
-              (setq coffee-cleanup-whitespace nil)))
-  (custom-set-variables
-   '(coffee-tab-width 2))
+  (eval-after-load "coffee-mode"
+    (progn
+      (add-hook 'coffee-mode-hook 'subword-mode)
+      (add-hook 'coffee-mode-hook 'highlight-indentation-current-column-mode)
+      (add-hook 'coffee-mode-hook
+                (defun coffee-mode-newline-and-indent ()
+                  (define-key coffee-mode-map "\C-j" 'coffee-newline-and-indent)
+                  (setq coffee-cleanup-whitespace nil)))
+      (custom-set-variables
+       '(coffee-tab-width 2))))
 #+end_src
 
 ***** Lisp
@@ -1225,7 +1239,7 @@ file save hook.
 
 *** Org Mode
 
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Org-Mode
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1309,15 +1323,18 @@ Load org-babel (code) extensions for languages we use.
 Since version 8, Org uses a modular exporter. Load the exporter pieces
 we need.
 
-#+begin_src emacs-lisp tangle:no
-;  (require 'ox-publish)
-;  (require 'ox-html)
-;  (require 'ox-latex)
-;  (require 'ox-ascii)
-;  (require 'ox-md)
-;  (require 'ox-man)
-;  (require 'ox-beamer)
-;  (require 'ox-org)
+#+begin_src emacs-lisp :tangle no
+   (require 'ox-publish)
+   (require 'ox-html)
+   (require 'ox-latex)
+   (require 'ox-ascii)
+   (require 'ox-md)
+   (require 'ox-man)
+   (require 'ox-beamer)
+   (require 'ox-org)
+#+end_src
+
+#+begin_src emacs-lisp
 (setq org-export-backends '(org latex taskjuggler publish))
 #+end_src
 
@@ -1547,18 +1564,32 @@ Set general org-agenda options.
   (setq org-agenda-todo-list-sublevels nil)
 #+end_src
 
-If we have multiple monitors, open the agenda view in a separate frame. If we
-don't, open the agenda in the current window and restore window state when
-it's closed.
+If we have multiple monitors, open the agenda and capture views in a separate
+frame. If we don't, open the agenda in the current window and restore window
+state when it's closed.
 
 #+begin_src emacs-lisp
-  (if (eq (length (display-monitor-attributes-list)) 1)
-    (progn
-      (setq org-agenda-window-setup 'current-window)
-      (setq org-agenda-restore-windows-after-quit t))
-   (progn
-    (setq org-agenda-window-setup 'other-frame)
-    (setq org-agenda-restore-windows-after-quit nil)))
+  (defun tlc/org-window-setup nil
+      "If we have multiple monitors, open the agenda and capture
+    views in a separate frame. If we don't, open the agenda in the
+    current window and restore window state when it's closed."
+
+      (if (< tlc/number-of-displays 2)
+          (progn
+            (setq org-agenda-window-setup 'current-window)
+            (setq org-agenda-restore-windows-after-quit t))
+        (progn
+          (setq org-agenda-window-setup 'other-frame)
+          (setq org-agenda-restore-windows-after-quit nil)
+          (require 'org-capture-pop-frame)
+          (eval-after-load "org-capture-pop-frame" 
+            (custom-set-variables
+              '(ocpf-frame-parameters '((width . 132) 
+                                      (height . 35)
+                                      (tool-bar-lines . 0)
+                                      (menu-bar-lines . 0))))))))
+  (if (fboundp 'org-mode)
+    (tlc/org-window-setup))
 #+end_src
 
 Specify our =org-agenda-files=.
@@ -1770,32 +1801,25 @@ Define font faces for todo keyword states.
                 ("CANCELED" :foreground "forest green" :weight bold))))
 #+end_src
 
-Mark a TODO as complete when all child TGDOs are completed. From [[https://orgmode.org/manual/Breaking-Down-Tasks.html][here]].
-
-#+begin_src emacs-lisp
-(defun org-summary-todo (n-done n-not-done)
-  "Switch entry to DONE when all subentries are done, to TODO otherwise."
-  (let (org-log-done org-log-states)   ; turn off logging
-    (org-todo (if (= n-not-done 0) "DONE" "TODO"))))
-
-(add-hook 'org-after-todo-statistics-hook 'org-summary-todo)
-#+end_src
 ***** Org Source Color Theme
 
 Change the coloring of org code blocks.
 
 #+begin_src emacs-lisp
-(defface org-block-begin-line
-  '((t (:underline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF")))
-  "Face used for the line delimiting the begin of source blocks.")
+  (defface org-block-begin-line
+    '((t (:underline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF")))
+    "Face used for the line delimiting the begin of source blocks."
+    :group 'org-codeblock)
 
-(defface org-block-background
-  '((t (:background "#FFFFEA")))
-  "Face used for the source block background.")
+  (defface org-block-background
+    '((t (:background "#FFFFEA")))
+    "Face used for the source block background."
+    :group 'org-codeblock)
 
-(defface org-block-end-line
-  '((t (:overline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF")))
-  "Face used for the line delimiting the end of source blocks.")
+  (defface org-block-end-line
+    '((t (:overline "#A7A6AA" :foreground "#008ED1" :background "#EAEAFF")))
+    "Face used for the line delimiting the end of source blocks."
+    :group 'org-codeblock)
 #+end_src
 
 ***** Org Property Settings
@@ -1983,7 +2007,8 @@ And now we can define the =org-capture-templates= used by
 
                 ("Protocol" :keys "p" :file "codex.org"
                  :template ("* [[%:link][%:description]]"
-                            "Captured at: %u"                       
+                            "Captured at: %U"
+                            ""
                             "#+BEGIN_QUOTE"
                             "%i"
                             "#+END_QUOTE"
@@ -2019,19 +2044,19 @@ Automatically re-align tags after capturing.
   (add-hook 'org-after-tags-change-hook '(lambda nil (org-align-tags t)))
 #+end_src
 
-Load up [[][org-protocol-capture-html] which can capture a whole Web page to
+Load up [[https://github.com/alphapapa/org-protocol-capture-html][org-protocol-capture-html]], which can capture a whole Web page to
 org-mode. Requires the [[https://github.com/magnars/s.el][s.el]] library and [[https://pandoc.org/][pandoc]].
 
-#+begin_src emacs-lisp
-  ;; (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/s"))
-  ;; (add-to-list 'load-path (concat (file-truename user-emacs-directory)
-  ;;                                 "vendor/org-protocol-capture-html"))
+#+begin_src emacs-lisp :tangle no
+  (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/s"))
+  (add-to-list 'load-path (concat (file-truename user-emacs-directory)
+                                  "vendor/org-protocol-capture-html"))
 
-  ;; (require 'org-protocol-capture-html)
+  (require 'org-protocol-capture-html)
 
-  ;; (add-to-list 'org-capture-templates '("w" "Web site" entry
-  ;;                                        (file "")
-  ;;                                        "* %a :website:\n\n%U %?\n\n%:initial"))
+  (add-to-list 'org-capture-templates '("w" "Web site" entry
+                                         (file "")
+                                         "* %a :website:\n\n%U %?\n\n%:initial"))
 #+end_src
 
 ***** Refile Settings
@@ -2138,8 +2163,11 @@ Remove empty LOGBOOK drawers on clock-out.
 (setq org-enforce-todo-dependencies t)
 (setq org-track-ordered-property-with-tag t)
 (setq org-agenda-dim-blocked-tasks t)
+#+end_src
 
-;; Mark TODO entries DONE when all subentries are done.
+Mark TODO entries DONE when all subentries are done. From [[https://orgmode.org/manual/Breaking-Down-Tasks.html][here]].
+
+#+begin_src emacs-lisp
 (defun org-summary-todo (n-done n-not-done)
   "Switch entry to DONE when all subentries are done, to TODO otherwise."
   (let (org-log-done org-log-states)   ; turn off logging
@@ -2454,15 +2482,15 @@ Set key bindings for the org file skeletons.
   (global-set-key "\C-c0" (lambda nil
                             (interactive)
                             (tlc/org-project-skeleton)
-                            (org-align-all-tags)))
+                            (org-align-tags t)))
   (global-set-key "\C-c9" (lambda nil
                             (interactive)
                             (tlc/org-file-header-skeleton)
-                            (org-align-all-tags)))
+                            (org-align-tags t)))
   (global-set-key "\C-c8" (lambda nil
                             (interactive)
                             (tlc/org-writing-skeleton)
-                            (org-align-all-tags)))
+                            (org-align-tags t)))
 #+end_src
 
 Define helpers for jumping beteen skeleton markers. Markere are
@@ -2544,7 +2572,7 @@ From https://karl-voit.at/2019/11/03/org-projects/.
 
 ***** Todo Hooks
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (defvar tlc/enable-todo-state-change-hook nil
     "Set to true to enable the TODO state change hook.")
 
@@ -2921,16 +2949,34 @@ Add some additional attributes to the exporter.
 
 *** LaTeX editing
 
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; LaTeX Editing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #+end_src
 
+Load the AuCTeX extension.
+
+#+begin_src emacs-lisp
+(load "auctex.el" nil t t)
+#+end_src
+
+Configure AuCTeX integration.
+
+#+begin_src emacs-lisp
+  (eval-after-load "auctex"
+    (progn	
+      (setq TeX-auto-save t)
+      (setq TeX-parse-self t)
+      (setq-default TeX-master nil)
+      (setq preview-preserve-counters t)
+      ))
+#+end_src
+
 *** Gnu Server
 
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Gnu Server
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2946,7 +2992,7 @@ Make sure the Gnu server is started if it's available.
 
 *** Miscellaneous Customizations
 
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Miscellaneous Customizations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2995,7 +3041,7 @@ From [[http://ergoemacs.org/emacs/emacs_new_empty_buffer.html][http://ergoemacs.
 
 *** customize Settings
 
-#+begin_src emacs-lisp tangle:yes
+#+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Emacs `customize` settings
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

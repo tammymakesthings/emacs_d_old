@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-10 14:52:45 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-10 14:56:13 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -877,7 +877,7 @@ Enable tilt (side to side) scrolling with the mouse wheel (or touchpad).
 
 Load the dashboard.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (require 'dashboard)
 
   (setq dashboard-banner-logo-title "Welcome to Emacs Dashboard")
@@ -894,11 +894,7 @@ Load the dashboard.
   (setq dashboard-set-navigator t)
   (setq show-week-agenda-p t)
   (dashboard-setup-startup-hook)
-#+end_src
 
-Configure the dashboard to show in new frames created by =emacsclient=.
-
-#+begin_src emacs-lisp
   (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
 #+end_src
 

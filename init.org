@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-10 13:03:01 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-10 13:08:00 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -834,6 +834,17 @@ windows vertically unless they're small.
      split-height-threshold 4
      split-width-threshold 40
      split-window-preferred-function 'split-window-really-sensibly)
+#+end_src
+
+***** Configure mouse integration
+
+Enable tilt (side to side) scrolling with the mouse wheel (or touchpad).
+
+#+begin_src emacs-lisp
+  (if (fboundp 'mouse-wheel-mode)
+    (progn
+      (setq mouse-wheel-flip-direction t)
+      (setq mouse-wheel-tilt-scroll t)))
 #+end_src
 
 *** Editing Customizations

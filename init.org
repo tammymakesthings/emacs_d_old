@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-10 12:59:59 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-10 13:03:01 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -382,6 +382,7 @@ recently edited files when you first start emacs.
   (require 'recentf)
   (recentf-mode 1)
   (setq recentf-max-menu-items 40)
+  (add-hook 'find-file-hook 'recentf-save-list)
 #+end_src
 
 ***** Ido Mode

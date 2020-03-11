@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-11 16:05:07 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-11 16:16:19 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1803,7 +1803,7 @@ agendas (defined in =org-agenda-custom-commands=) are automatically filtered.
   (setq tlc/org-work-agenda-files (cl-union
                                    (list
                                     (concat org-directory "/master.org")
-                                    (concat org-directory "/_scripts/mb_outlook.org")
+                                    (concat org-directory "/mb_outlook.org")
                                     (concat org-directory "/calls.org"))
                                    tlc/org-work-project-files))
 

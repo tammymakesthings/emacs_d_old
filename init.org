@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-11 11:42:01 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-11 11:55:33 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1424,7 +1424,7 @@ We load =org-mode= from our =vendor/= tree.
     ;; Load org extensions
     (setq org-modules
           (quote (
-                  org-ctags
+;                  org-ctags
                   org-datetree
                   org-element
                   org-protocol
@@ -1583,7 +1583,7 @@ Enable =font-lock-mode= and =fill-mode= in org files.
 
 Setup =org-ctags=.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
     (if (fboundp 'org-ctags)
         (progn
           (if (eq system-type 'windows-nt)

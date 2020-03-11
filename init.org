@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-11 10:11:02 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-11 11:42:01 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -150,6 +150,60 @@ it. However, I do make the following assumptions:
 
 * Emacs Configuration
 
+*** Index
+:PROPERTIES:
+:STARTUP:  folded
+:END:
+***** [[*Preliminaries][Preliminaries]]
+***** [[*Package Installation][Package Installation]]
+***** [[*Shell Integration][Shell Integration]]
+***** [[*Navigation][Navigation]]
+***** [[*UI Customizations][UI Customizations]]
+***** [[*Editing Customizations][Editing Customizations]]
+***** [[*Programming Languages][Programming Languages]]
+******* [[*Shell Scripts][Shell Scripts]]
+******* [[*Emacs-Lisp][Emacs-Lisp]]
+******* [[*Clojure][Clojure]]
+******* [[*Python][Python]]
+******* [[*Javascript][Javascript]]
+******* [[*Lisp][Lisp]]
+******* [[*Smalltalk][Smalltalk]]
+******* [[*YAML][YAML]]
+***** [[*Gnus][Gnus]]
+***** [[*Org Mode][Org Mode]]
+******* [[*Loading Org Mode][Loading Org Mode]]
+******* [[*Org/WSL Fix][Org/WSL Fix]]
+******* [[*Org File Associations][Org File Associations]]
+******* [[*Basic Configuration][Basic Configuration]]
+******* [[*Load Most-Used Org Files][Load Most-Used Org Files]]
+******* [[*General Helper Functions][General Helper Functions]]
+******* [[*Org Key Bindings][Org Key Bindings]]
+******* [[*Archiving Settings][Archiving Settings]]
+******* [[*Org Agenda Settings][Org Agenda Settings]]
+******* [[*Logging Settings][Logging Settings]]
+******* [[*Tagging and Keyword Settings][Tagging and Keyword Settings]]
+******* [[*Org Source Color Theme][Org Source Color Theme]]
+******* [[*Org Property Settings][Org Property Settings]]
+******* [[*Org Capture Settings][Org Capture Settings]]
+******* [[*Refile Settings][Refile Settings]]
+******* [[*Journal Entries][Journal Entries]]
+******* [[*Timeclock settings][Timeclock settings]]
+******* [[*Org Todo Dependencies][Org Todo Dependencies]]
+******* [[*Org Structure and Formatting][Org Structure and Formatting]]
+******* [[*Org custom enter key behavior][Org custom enter key behavior]]
+******* [[*Org-Babel Settings][Org-Babel Settings]]
+******* [[*Org File Skeletons][Org File Skeletons]]
+******* [[*Project Functions][Project Functions]]
+******* [[*Todo Hooks][Todo Hooks]]
+******* [[*Git Integration][Git Integration]]
+******* [[*Formula helpers for org tables][Formula helpers for org tables]]
+******* [[*Org publishing][Org publishing]]
+******* [[*Outlook Integration][Outlook Integration]]
+***** [[*LaTeX editing][LaTeX editing]]
+***** [[*Gnu Server][Gnu Server]]
+***** [[*Miscellaneous Customizations][Miscellaneous Customizations]]
+***** [[*customize Settings][customize Settings]]
+
 *** Preliminaries
 
 #+begin_src emacs-lisp :tangle yes
@@ -174,7 +228,6 @@ Set some variables to identify who I am.
   (setq user-full-name "Tammy Cravit")
   (setq user-mail-address "tammymakesthings@gmail.com")
 #+end_src
-
 *** Package Installation
 
 #+begin_src emacs-lisp :tangle yes
@@ -1018,6 +1071,8 @@ automatically updated to the current time whenever the file is saved.
     (add-hook 'before-save-hook 'time-stamp))
 #+end_src
 
+
+
 ***** Enable Hippie Expand
 
 [[http://www.emacswiki.org/emacs/HippieExpand][HippieExpand]] ooks at the word before point and tries to expand it in
@@ -1526,6 +1581,25 @@ Enable =font-lock-mode= and =fill-mode= in org files.
   (add-hook 'org-mode-hook 'auto-fill-mode)
 #+end_src
 
+Setup =org-ctags=.
+
+#+begin_src emacs-lisp
+    (if (fboundp 'org-ctags)
+        (progn
+          (if (eq system-type 'windows-nt)
+              (setq org-ctags-path-to-ctags "c:/utils/ctags.exe")
+            (setq org-ctags-path-to-ctags "/usr/bin/ctags"))
+          (add-hook 'org-mode-hook
+                    (lambda ()
+                      (define-key org-mode-map "\C-co" 'org-ctags-find-tag-interactive)))
+          (setq org-ctags-open-link-functions
+                '(org-ctags-find-tag
+                  org-ctags-ask-rebuild-tags-file-then-find-tag
+                  org-ctags-ask-append-topic
+                  org-ctags-fail-silently))
+          ))
+#+end_src
+
 ***** Load Most-Used Org Files
 
 Define a function to open our most used files with a keystroke.
@@ -1589,7 +1663,6 @@ selected subtree.
 #+end_src
 
 ***** Org Key Bindings
-
 #+begin_src emacs-lisp
   (global-set-key "\C-cc" 'org-capture)
   (global-set-key "\C-cl" 'org-store-link)
@@ -2217,7 +2290,6 @@ org-mode. Requires the [[https://github.com/magnars/s.el][s.el]] library and [[h
 #+end_src
 
 ***** Refile Settings
-
 This is a helper function to refile into a datetree. It comes from
 [[https://github.com/alphapapa/unpackaged.el][here]].
 
@@ -2315,7 +2387,6 @@ Remove empty LOGBOOK drawers on clock-out.
 #+end_src
 
 ***** Org Todo Dependencies
-
 #+begin_src emacs-lisp
 (setq org-enforce-todo-dependencies t)
 (setq org-track-ordered-property-with-tag t)
@@ -2688,7 +2759,6 @@ This came from [[https://www.emacswiki.org/emacs/SkeletonMode][here]].
 #+end_src
 
 ***** Project Functions
-
 From https://karl-voit.at/2019/11/03/org-projects/.
 
 #+begin_src emacs-lisp
@@ -2803,7 +2873,6 @@ From https://karl-voit.at/2019/11/03/org-projects/.
 #+end_src
 
 ***** Org publishing
-
 Helper to export org subtrees to multiple files.
 
 #+begin_src emacs-lisp
@@ -3102,8 +3171,6 @@ Add some additional attributes to the exporter.
       (org-add-link-type "outlook" #'org-outlook-open)
       ))
 #+end_src
-
-
 *** LaTeX editing
 
 #+begin_src emacs-lisp :tangle yes
@@ -3132,7 +3199,6 @@ Configure AuCTeX integration.
 #+end_src
 
 *** Gnu Server
-
 #+begin_src emacs-lisp :tangle yes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Gnu Server

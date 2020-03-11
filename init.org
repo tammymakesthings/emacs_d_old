@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-10 15:05:04 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-11 10:11:02 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -387,7 +387,6 @@ recently edited files when you first start emacs.
   (require 'recentf)
   (recentf-mode 1)
   (setq recentf-max-menu-items 40)
-  (add-hook 'find-file-hook 'recentf-save-list)
 #+end_src
 
 ***** Ido Mode
@@ -1362,40 +1361,30 @@ of other stuff. As you'll see, it's VERY customizable.
 We load =org-mode= from our =vendor/= tree.
 
 #+begin_src emacs-lisp
-  (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/org/lisp"))
-  (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/org/contrib/lisp"))
+    (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/org/lisp"))
+    (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/org/contrib/lisp"))
 
-  (require 'org)
+    (require 'org)
 
-  ;; Load org extensions
-  (setq org-modules
-        (quote (
-                org-bbdb
-                org-bibtex
-                org-ctags
-                org-datetree
-                org-element
-                org-protocol
-                org-docview
-                org-element
-                org-gnus
-                org-id
-                org-info
-                org-inlinetask
-                org-irc
-                org-mhe
-                org-mouse
-                org-protocol
-                org-rmail
-                org-w3m
-                )))
+    ;; Load org extensions
+    (setq org-modules
+          (quote (
+                  org-ctags
+                  org-datetree
+                  org-element
+                  org-protocol
+                  org-docview
+                  org-id
+                  org-info
+                  org-inlinetask
+                  org-mouse
+                  org-protocol
+                  org-collector
+                  org-depend
+                  )))
 
-(require 'org-element)
-(require 'org-datetree)
-(require 'org-protocol)
-(require 'org-inlinetask)
-(eval-after-load 'org
- '(org-load-modules-maybe t))
+  (eval-after-load 'org
+   '(org-load-modules-maybe t))
 
 #+end_src
 
@@ -1437,12 +1426,11 @@ we need.
    (require 'ox-ascii)
    (require 'ox-md)
    (require 'ox-man)
-   (require 'ox-beamer)
    (require 'ox-org)
 #+end_src
 
 #+begin_src emacs-lisp
-(setq org-export-backends '(org latex taskjuggler publish))
+(setq org-export-backends '(org latex taskjuggler publish html ascii md))
 #+end_src
 
 ***** Org/WSL Fix
@@ -1682,61 +1670,70 @@ Set general org-agenda options.
   (setq org-agenda-skip-scheduled-if-done t)
   (setq org-agenda-skip-deadline-if-done t)
   (setq org-agenda-include-all-todo t)
-  (setq org-agenda-include-diary t)
+  (setq org-agenda-include-diary nil)
   (setq org-agenda-tags-todo-honor-ignore-options t)
   (setq org-agenda-todo-list-sublevels nil)
 #+end_src
 
-If we have multiple monitors, open the agenda and capture views in a separate
-frame. If we don't, open the agenda in the current window and restore window
-state when it's closed.
+Set some options that speed up agenda processing.
 
 #+begin_src emacs-lisp
-  (defun tlc/org-window-setup nil
-      "If we have multiple monitors, open the agenda and capture
-    views in a separate frame. If we don't, open the agenda in the
-    current window and restore window state when it's closed."
-
-      (if (< tlc/number-of-displays 2)
-          (progn
-            (setq org-agenda-window-setup 'current-window)
-            (setq org-agenda-restore-windows-after-quit t))
-        (progn
-          (setq org-agenda-window-setup 'other-frame)
-          (setq org-agenda-restore-windows-after-quit nil)
-          (require 'org-capture-pop-frame)
-          (eval-after-load "org-capture-pop-frame" 
-            (custom-set-variables
-              '(ocpf-frame-parameters '((width . 132) 
-                                      (height . 35)
-                                      (tool-bar-lines . 0)
-                                      (menu-bar-lines . 0))))))))
-  (if (fboundp 'org-mode)
-    (tlc/org-window-setup))
+  (setq org-agenda-dim-blocked-tasks nil)
+  (setq org-agenda-inhibit-startup t)
+  (setq org-agenda-use-tag-inheritance nil)
+  (setq org-agenda-ignore-drawer-properties '(effort appt category))
 #+end_src
 
-Specify our =org-agenda-files=.
+
+Set up where org windows appear.
 
 #+begin_src emacs-lisp
-  (setq org-agenda-files (list
-                           (concat org-directory "/master.org")
-                           (concat org-directory "/calls.org")
-                           (concat org-directory "/proj_eos.org")
-                           (concat org-directory "/personal.org")
-                           ))
+  (setq org-agenda-window-setup 'current-window)
+  (setq org-agenda-restore-windows-after-quit t)
+#+end_src
 
-  (defvar tlc/org-personal-agenda-files nil "Personal agenda files for filtered views.")
-  (defvar tlc/org-work-agenda-files nil "Work agenda files for filtered views.")
+Specify our =org-agenda-files=. We define lists of personal and work project
+files (=tlc/org-personal-project-files= and
+=tlc/org-work-project-files=). Next we build the personal and work agenda file
+lists from those and the corresponding non-project lists
+(=tlc/org-personal-agenda-files= and =tlc/org-work-agenda-files=). Finally we
+set =org-agenda-files= to be the union of =tlc/org-personal-agenda-files= and
+=tlc/org-work-agenda-files=. This seems like a lot of contortion, but then our
+agendas (defined in =org-agenda-custom-commands=) are automatically filtered.
 
-  (setq tlc/org-personal-agenda-files (list
-                           (concat org-directory "/calls.org")
-                           (concat org-directory "/personal.org")))
+#+begin_src emacs-lisp
+    (defvar tlc/org-personal-agenda-files nil "Personal agenda files for filtered views.")
+    (defvar tlc/org-work-agenda-files nil "Work agenda files for filtered views.")
+    (defvar tlc/org-personal-project-files nil "Personal projects to include in agenda.")
+    (defvar tlc/org-work-project-files nil "Work projects to include in agenda.")
 
-  (setq tlc/org-work-agenda-files (list
-                           (concat org-directory "/master.org")
-                           (concat org-directory "/calls.org")
-                           (concat org-directory "/proj_eos.org")))
+    (setq tlc/org-personal-project-files (list
+                                        (concat org-directory "/proj_pmp_certification.org")
+                                        (concat org-directory "/proj_college.org")
+                                        (concat org-directory "/proj_transformation_2e.org")
+                                        (concat org-directory "/proj_az_mystery_1.org")
+                                        ))
 
+    (setq tlc/org-work-project-files (list
+                                      (concat org-directory "/proj_eos.org")
+                                      (concat org-directory "/proj_rfi_process.org")
+                                      (concat org-directory "/proj_cm_sharepoint.org")
+                                      (concat org-directory "/proj_collab_requests.org")
+                                      ))
+
+    (setq tlc/org-personal-agenda-files (cl-union
+                                         (list
+                                          (concat org-directory "/calls.org")
+                                          (concat org-directory "/personal.org"))
+                                        tlc/org-personal-project-files))
+
+    (setq tlc/org-work-agenda-files (cl-union
+                                     (list
+                                      (concat org-directory "/master.org")
+                                      (concat org-directory "/calls.org"))
+                                     tlc/org-work-project-files))
+
+    (setq org-agenda-files (cl-union tlc/org-personal-agenda-files tlc/org-work-agenda-files))
 #+end_src
 
 Helper function for =org-agenda-custom-commands= to skip a subtree if
@@ -1755,102 +1752,139 @@ it has a particular priority. From [[https://blog.aaronbieber.com/2016/09/24/an-
         nil)))
 #+end_src
 
-Define custom agenda views.
+******* Define custom agenda views.
+
+We define a custom daily combined agenda, and custom daily work and personal
+agendas. These have essentially the same definitions, except they are filtered
+to =org-agenda-files=, =tlc/org-work-agenda-files= and
+=tlc/org-personal-agenda-files=, respectively.
+
+Initialize =org-agenda-custom-commands= to be empty.
 
 #+begin_src emacs-lisp
-  (setq org-agenda-custom-commands
-        '(
-          ("t" "Today's Agenda - Combined"
-           (
-            (agenda "" ((org-agenda-overriding-title "*** This Week's Agenda ***")))
-            (tags "PRIORITY=\"A\""
-                (
-                 (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                 (org-agenda-overriding-header "*** High Priority Tasks ***")
-                 (org-agenda-sorting-strategy '(priority-down))
-                 ))
-            (todo "TODO|DOING" 
-                  (
-                   (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                   (org-agenda-overriding-header "*** Active Tasks ***")
-                   (org-agenda-sorting-strategy '(priority-down))
-                   ))
-            (todo "WAITING|DELEGATED" 
-                  (
-                   (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                   (org-agenda-overriding-header "*** Delegated/Waiting Tasks ***")
-                   (org-agenda-sorting-strategy '(priority-down))
-                 ))
-            ))
-          ("w" "Today's Agenda - Work"
-           (
-            (agenda "" ((org-agenda-overriding-title "*** This Week's Agenda ***")))
-            (tags "PRIORITY=\"A\""
-                (
-                 (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                 (org-agenda-overriding-header "*** High Priority Tasks ***")
-                 (org-agenda-sorting-strategy '(priority-down))
-                 (org-agenda-files tlc/org-work-agenda-files)
-                 ))
-            (todo "TODO|DOING" 
-                  (
-                   (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                   (org-agenda-overriding-header "*** Active Tasks ***")
-                   (org-agenda-sorting-strategy '(priority-down))
-                   (org-agenda-files tlc/org-work-agenda-files)
-                   ))
-            (todo "WAITING|DELEGATED" 
-                  (
-                   (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                   (org-agenda-overriding-header "*** Delegated/Waiting Tasks ***")
-                   (org-agenda-sorting-strategy '(priority-down))
-                   (org-agenda-files tlc/org-work-agenda-files)
-                   ))
-            ))
-           ("p" "Today's Agenda - Personal"
-            (
-             (agenda "" ((org-agenda-overriding-title "*** This Week's Agenda ***")))
-             (tags "PRIORITY=\"A\""
-                   (
-                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                    (org-agenda-overriding-header "*** High Priority Tasks ***")
-                    (org-agenda-sorting-strategy '(priority-down))
-                    (org-agenda-files tlc/org-personal-agenda-files)
-                    ))
-             (todo "TODO|DOING" 
-                   (
-                    (org-agenda-overriding-header "*** Active Tasks ***")
-                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                    (org-agenda-sorting-strategy '(priority-down))
-                    (org-agenda-files tlc/org-personal-agenda-files)
-                    ))
-             (todo "WAITING|DELEGATED" 
-                   (
-                    (org-agenda-overriding-header "*** Delegated/Waiting Tasks ***")
-                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                    (org-agenda-sorting-strategy '(priority-down))
-                    (org-agenda-files tlc/org-personal-agenda-files)
-                    ))
-            ))
+  (setq org-agenda-custom-commands nil)
+#+end_src
 
-          ("d" "Upcoming deadlines" agenda ""
-           ((org-agenda-entry-types '(:deadline))
-            (org-agenda-span 1)
-            (org-deadline-warning-days 60)
-            (org-agenda-time-grid nil)))
+Define the view for the combined agenda.
 
-          ("Q" . "Custom Queries")
-          ("Qa" "Archive search" search ""
-           (org-agenda-files (file-expand-wildcards (concat org-directory "/archive/*.org"))))
-          ("Ql" "Lists search" search ""
-           (org-agenda-files (file-expand-wildcards (concat org-directory "/list_*.org"))))
-          ("Qp" "Projects search" search ""
-           (org-agenda-files (file-expand-wildcards (concat org-directory "/proj_*.org"))))
-          ("Qw" "Writing search" search ""
-           (org-agenda-files (file-expand-wildcards (concat org-directory "/writing_*.org"))))
-          ("Qr" "Refile search" search ""
-           (org-agenda-files (file-expand-wildcards (concat org-directory "/refile*.org"))))
-          ))
+#+begin_src emacs-lisp
+  (add-to-list 'org-agenda-custom-commands
+               '("Z" "Today's Agenda - Combined"
+                 (
+                  (agenda "" (
+                              (org-agenda-span 7)
+                              (org-agenda-overriding-header "***** Next Week's Agenda:"))
+                          )
+                  (tags-todo "+PRIORITY=\"A\"" (
+                                                (org-agenda-overriding-header "***** High-Priority Todos:")
+                                                (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                                                (org-agenda-sorting-strategy '(priority-down))
+                             ))
+                  (todo "TODO|DOING" (
+                                      (org-agenda-overriding-header "***** Active Tasks:")
+                                      (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                                      (org-agenda-sorting-strategy '(priority-down))
+                                      ))
+                  (todo "WAITING|DELEGATED" (
+                                             (org-agenda-overriding-header "***** Waiting/Delegated Tasks:")
+                                             (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                                             (org-agenda-sorting-strategy '(priority-down))
+                                             ))
+                   )) t)
+#+end_src
+
+Define the view for the work-only agenda.
+
+#+begin_src emacs-lisp
+  (add-to-list 'org-agenda-custom-commands
+               '("W" "Today's Agenda - Work"
+                 (
+                  (agenda "" (
+                              (org-agenda-span 7)
+                              (org-agenda-files tlc/org-work-agenda-files)
+                              (org-agenda-overriding-header "***** Next Week's Agenda:"))
+                          )
+                  (tags-todo "+PRIORITY=\"A\"" (
+                                                (org-agenda-overriding-header "***** High-Priority Todos:")
+                                                (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                                                (org-agenda-files tlc/org-work-agenda-files)
+                                                (org-agenda-sorting-strategy '(priority-down))
+                             ))
+                  (todo "TODO|DOING" (
+                                      (org-agenda-overriding-header "***** Active Tasks:")
+                                      (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                                      (org-agenda-files tlc/org-work-agenda-files)
+                                      (org-agenda-sorting-strategy '(priority-down))
+                                      ))
+                  (todo "WAITING|DELEGATED" (
+                                             (org-agenda-overriding-header "***** Waiting/Delegated Tasks:")
+                                             (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                                             (org-agenda-files tlc/org-work-agenda-files)
+                                             (org-agenda-sorting-strategy '(priority-down))
+                                             ))
+                   )) t)
+#+end_src
+
+Define the view for the personal-only agenda.
+
+#+begin_src emacs-lisp
+  (add-to-list 'org-agenda-custom-commands
+          '("P" "Today's Agenda - Personal"
+                 (
+                  (agenda "" (
+                              (org-agenda-span 7)
+                              (org-agenda-files tlc/org-personal-agenda-files)
+                              (org-agenda-overriding-header "***** Next Week's Agenda:"))
+                          )
+                  (tags-todo "+PRIORITY=\"A\"" (
+                                                (org-agenda-overriding-header "***** High-Priority Todos:")
+                                                (org-agenda-files tlc/org-personal-agenda-files)
+                                                (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                                                (org-agenda-sorting-strategy '(priority-down))
+                             ))
+                  (todo "TODO|DOING" (
+                                      (org-agenda-overriding-header "***** Active Tasks:")
+                                      (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                                      (org-agenda-files tlc/org-personal-agenda-files)
+                                      (org-agenda-sorting-strategy '(priority-down))
+                                      ))
+                  (todo "WAITING|DELEGATED" (
+                                             (org-agenda-overriding-header "***** Waiting/Delegated Tasks:")
+                                             (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                                             (org-agenda-files tlc/org-personal-agenda-files)
+                                             (org-agenda-sorting-strategy '(priority-down))
+                                             ))
+                   )) t)
+#+end_src
+
+Define a view for upcoming deadlines.
+
+#+begin_src emacs-lisp
+  (add-to-list 'org-agenda-custom-commands
+               '("d" "Upcoming deadlines" agenda ""
+                 ((org-agenda-entry-types '(:deadline))
+                  (org-agenda-span 1)
+                  (org-deadline-warning-days 21)
+                  (org-agenda-time-grid nil))
+                 ) t)
+#+end_src
+
+Define custom queries which search subsets of files.
+
+#+begin_src emacs-lisp :tangle no
+  (add-to-list 'org-agenda-custom-commands
+             '               ("Q" "Custom Queries")
+               ("Qa" "Archive search" search ""
+                (org-agenda-files (file-expand-wildcards (concat org-directory "/archive/*.org"))))
+               ("Ql" "Lists search" search ""
+                (org-agenda-files (file-expand-wildcards (concat org-directory "/list_*.org"))))
+               ("Qp" "Projects search" search ""
+                (org-agenda-files (file-expand-wildcards (concat org-directory "/proj_*.org"))))
+               ("Qw" "Writing search" search ""
+                (org-agenda-files (file-expand-wildcards (concat org-directory "/writing_*.org"))))
+               ("Qr" "Refile search" search ""
+                (org-agenda-files (file-expand-wildcards (concat org-directory "/refile*.org"))))
+               ) t)
 #+end_src
 
 ***** Logging Settings

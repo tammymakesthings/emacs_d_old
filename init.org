@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-12 12:42:03 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-12 14:15:09 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -262,9 +262,10 @@ Load the packaging system and set up repositories.
                           ("elpa"         . "http://tromey.com/elpa/")
                           ("gnu"          . "http://elpa.gnu.org/packages/")
                           ("melpa"        . "http://melpa.milkbox.net/packages/")
-                          ("melpa-stable" . "http://stable.melpa.org/packages/")))
+                          ("melpa-stable" . "http://stable.melpa.org/packages/")
+                          ("org"          . "https://orgmode.org/elpa/")
+                          ))
   (add-to-list 'package-pinned-packages '(cider . "melpa-stable") t)
-  (add-to-list 'package-pinned-packages '(magit . "melpa-stable") t)
 #+end_src
 
 Now we need to activate packages. Do this first so the packages are
@@ -290,7 +291,9 @@ off for this because TLS is disabled.
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'use-package))
-  (package-install 'quelpa)
+
+  (unless (package-installed-p 'quelpa)
+    (package-install 'quelpa))
 #+end_src
 
 Now let's define the packages we'll need to load from ELPA.
@@ -301,46 +304,58 @@ Now let's define the packages we'll need to load from ELPA.
   ;; Add in your own as you wish:
   (defvar my-packages
     '(
-      paredit
+      all-the-icons
+      arduino-mode
+      auctex
+      cider
+      cider-hydra
       clojure-mode
       clojure-mode-extra-font-locking
-      cider
-      ido-completing-read+
-      smex
-      projectile
-      rainbow-delimiters
-      tagedit
-      magit
-      muse
-      markdown-mode
-      python-mode
-      python-docstring
-      python-test
-      pydoc
-      pyenv-mode
-      pyvenv
-      pythonic
-      spice-mode
-      arduino-mode
-      yaml-mode
-      slime
-      virtualenvwrapper
+      coffee-mode
+      dash
+      dashboard
+      dimmer
+      doom-themes
+      dracula-theme
+      git
       gnuplot
       gnuplot-mode
-      dracula-theme
-      posframe
-      dash
-      dimmer
-      coffee-mode
+      ido-completing-read+
+      magit
+      magit-org-todos
+      magithub
+      markdown-mode
+      muse
       org-capture-pop-frame
-      auctex
-      doom-themes
+      org-protocol-jekyll
       page-break-lines
-      dashboard
-      all-the-icons
-      magit-section
+      paredit
+      posframe
       pretty-hydra
-      bufler
+      projectile
+      py-autopep8
+      py-test
+      pydoc
+      pyenv-mode
+      pyenv-mode-auto
+      pylint
+      python-black
+      python-docstring
+      python-environment
+      python-mode
+      python-pytest
+      python-test
+      pythonic
+      pyvenv
+      rainbow-delimiters
+      slime
+      smalltalk-mode
+      smex
+      spice-mode
+      tagedit
+      ts
+      virtualenvwrapper
+      yaml-mode
       )
     )
 #+end_src
@@ -360,34 +375,27 @@ And, now we're ready to install packages.
       (package-install p)))
 #+end_src
 
-We'll set up =~/.emacs.d/vendor= as a place to store locally-installed
-packages. You can put stuff there to ensure it's loaded. The helper
-function =tlc/git-clone-to-vendor-dir= clones a git repo into the
-vendor dir if it's not already present.
+Install some packages from quelpa.
 
 #+begin_src emacs-lisp
-    (unless (file-directory-p (file-truename (concat user-emacs-directory "/vendor")))
-      (make-directory (file-truename (concat user-emacs-directory "/vendor"))))
+  (require 'quelpa)
+  (quelpa
+    '(quelpa-use-package
+      :fetcher git
+      :url "https://github.com/quelpa/quelpa-use-package.git"))
+  (require 'quelpa-use-package)
 
-    (defun tlc/git-clone-to-vendor-dir (repo-name repo-src)
-      (message (concat "Cloning " repo-name " to vendor/" repo-name "..."))
-
-      (unless (file-directory-p (file-truename (concat user-emacs-directory
-                                                       "/vendor/" repo-name)))
-        (shell-command (format "git clone %s %s"
-                               repo-src
-                               (file-truename (concat user-emacs-directory "/vendor/"
-                                                      repo-name))))
-
-        (let ((default-directory (file-truename (concat user-emacs-directory "/vendor/"
-                                                        repo-name))))
-          (if (or (file-readable-p "Makefile")
-                  (file-readable-p "Makefile"))
-              (shell-command "make")))))
-
-  (add-to-list 'load-path (file-truename (concat user-emacs-directory "/vendor")))
-  (add-to-list 'load-path (file-truename (concat user-emacs-directory "/vendor/ts")))
+  ; Load org-plus-contrib from the orgmode.org elpa repository
+  (use-package org        :ensure org-plus-contrib)
+  (use-package doct       :quelpa (doct       :fetcher github :repo "progfolio/doct"))
+  (use-package org-jekyll :quelpa (org-jekyll :fetcher github :repo "juanre/org-jekyll"))
+  (use-package ts         :quelpa (ts         :fetcher github :repo "alphapapa/ts.el"))
+  (use-package s          :quelpa (s          :fetcher github :repo "magnars/s.el"))
+  (use-package org-protocol-capture-html 
+    :quelpa (org-protocol-capture-html :fetcher github 
+                                       :repo "alphapapa/org-protocol-capture-html"))
 #+end_src
+
 
 *** Shell Integration
 
@@ -624,72 +632,71 @@ Diable the terminal bell.
 
 Bufler groups buffers to make them easier to navigate.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (require 'magit)
   (require 'magit-section)
-  (require 'bufler)
 
-  (if (fboundp 'bufler)
-      (progn
-        (global-set-key "\C-cb" 'bufler)
-      
-        (bufler-defgroups
-          (group
-           ;; Subgroup collecting all named workspaces.
-           (auto-workspace))
-          (group
-           ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
-           (group-or "*Help/Info*"
-                     (mode-match "*Help*" (rx bos "help-"))
+  (use-package bufler
+               :quelpa (bufler :fetcher github :repo "alphapapa/bufler.el")
+               :config (progn
+                         (global-set-key "\C-cb" 'bufler)
+                         (bufler-defgroups
+                           (group
+                            ;; Subgroup collecting all named workspaces.
+                            (auto-workspace))
+                           (group
+                            ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
+                            (group-or "*Help/Info*"
+                                      (mode-match "*Help*" (rx bos "help-"))
                      (mode-match "*Info*" (rx bos "info-"))))
-          (group
-           ;; Subgroup collecting all special buffers (i.e. ones that are not
-           ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
-           ;; through to other groups, so they end up grouped with their project buffers).
-           (group-and "*Special*"
-                      (lambda (buffer)
-                        (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
-                                             buffer)
-                                    (funcall (mode-match "Dired" (rx bos "dired"))
-                                             buffer)
-                                    (funcall (auto-file) buffer))
-                          "*Special*")))
-           (group
-            ;; Subgroup collecting these "special special" buffers
-            ;; separately for convenience.
-            (name-match "**Special**"
-                        (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace") "*")))
-           (group
-            ;; Subgroup collecting all other Magit buffers, grouped by directory.
-            (mode-match "*Magit* (non-status)" (rx bos (or "magit" "forge") "-"))
-            (auto-directory))
-           ;; Subgroup for Helm buffers.
-           (mode-match "*Helm*" (rx bos "helm-"))
-           ;; Remaining special buffers are grouped automatically by mode.
-           (auto-mode))
-          ;; All buffers under "~/.emacs.d" (or wherever it is).
-          (dir user-emacs-directory)
-          (group
-           ;; Subgroup collecting buffers in `org-directory' (or "~/org" if
-           ;; `org-directory' is not yet defined).
-           (dir (if (bound-and-true-p org-directory)
-                    org-directory
-                  "~/org"))
-           (group
-            ;; Subgroup collecting indirect Org buffers, grouping them by file.
-            ;; This is very useful when used with `org-tree-to-indirect-buffer'.
-            (auto-indirect)
-            (auto-file))
-           ;; Group remaining buffers by whether they're file backed, then by mode.
-           (group-not "*special*" (auto-file))
-           (auto-mode))
-          (group
-           ;; Subgroup collecting buffers in a version-control project,
-           ;; grouping them by directory.
-           (auto-project))
-          ;; Group remaining buffers by directory, then major mode.
-          (auto-directory)
-          (auto-mode))
+                           (group
+                            ;; Subgroup collecting all special buffers (i.e. ones that are not
+                            ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
+                            ;; through to other groups, so they end up grouped with their project buffers).
+                            (group-and "*Special*"
+                                       (lambda (buffer)
+                                         (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
+                                                              buffer)
+                                                     (funcall (mode-match "Dired" (rx bos "dired"))
+                                                              buffer)
+                                                     (funcall (auto-file) buffer))
+                                           "*Special*")))
+                            (group
+                             ;; Subgroup collecting these "special special" buffers
+                             ;; separately for convenience.
+                             (name-match "**Special**"
+                                         (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace") "*")))
+                            (group
+                             ;; Subgroup collecting all other Magit buffers, grouped by directory.
+                             (mode-match "*Magit* (non-status)" (rx bos (or "magit" "forge") "-"))
+                             (auto-directory))
+                            ;; Subgroup for Helm buffers.
+                            (mode-match "*Helm*" (rx bos "helm-"))
+                            ;; Remaining special buffers are grouped automatically by mode.
+                            (auto-mode))
+                           ;; All buffers under "~/.emacs.d" (or wherever it is).
+                           (dir user-emacs-directory)
+                           (group
+                            ;; Subgroup collecting buffers in `org-directory' (or "~/org" if
+                            ;; `org-directory' is not yet defined).
+                            (dir (if (bound-and-true-p org-directory)
+                                     org-directory
+                                   "~/org-life"))
+                            (group
+                             ;; Subgroup collecting indirect Org buffers, grouping them by file.
+                             ;; This is very useful when used with `org-tree-to-indirect-buffer'.
+                             (auto-indirect)
+                             (auto-file))
+                            ;; Group remaining buffers by whether they're file backed, then by mode.
+                            (group-not "*special*" (auto-file))
+                            (auto-mode))
+                           (group
+                            ;; Subgroup collecting buffers in a version-control project,
+                            ;; grouping them by directory.
+                            (auto-project))
+                           ;; Group remaining buffers by directory, then major mode.
+                           (auto-directory)
+                           (auto-mode))))
 #+end_src
 
 ***** Show Line Numbers
@@ -3357,28 +3364,6 @@ Add some additional attributes to the exporter.
   (add-to-list 'org-taskjuggler-valid-project-attributes 'include)
 #+end_src
 
-***** Outlook Integration
-
-#+begin_src emacs-lisp
-  (defvar tlc/enable-org-outlook-integration nil "Enable ol-get for Outlook integration")
-  (when (and tlc/enable-org-outlook-integration (eq system-type 'windows-nt))
-    (progn
-      (require 'ts)
-      (add-to-list 'load-path (expand-file-name "~/.emacs.d/vendor/ol-get"))
-      (add-to-list 'load-path (expand-file-name "~/.emacs.d/vendor/posframe"))
-      (require 'ol-get)
-      (setq
-       ol-get-python-executable "python"
-       ol-get-outlook-diary-file "~/outlook-diary"
-       org-agenda-include-diary t)
-      (defun org-outlook-open (id)
-        "Open the Outlook item identified by ID. ID should be an Outlook GUID."
-        (w32-shell-execute "open" "outlook.exe" ;; outlook.exe is on shell path by default
-                           (concat "/select " "outlook:" id)))
-
-      (org-add-link-type "outlook" #'org-outlook-open)
-      ))
-#+end_src
 *** LaTeX editing
 
 #+begin_src emacs-lisp :tangle yes
@@ -3490,17 +3475,6 @@ refactored out to somewhere else.
    ;; If there is more than one, they won't work right.
    '(coffee-tab-width 2)
    '(muse-project-alist nil)
-   '(package-selected-packages
-     (quote
-      (auctex smalltalk-mode gnuplot gnuplot-mode posframe
-              virtualenvwrapper ts use-package gnu-elpa-keyring-update py-test
-              pyvenv pylint pyenv-mode-auto pydoc py-autopep8 python-black
-              python-environment python-test python-docstring python-pytest
-              spice-mode magit-org-todos magithub git org-protocol-jekyll
-              slime markdown-mode pythonic help-find-org-mode muse cider-hydra
-              magit tagedit rainbow-delimiters projectile smex
-              cider clojure-mode-extra-font-locking
-              clojure-mode paredit exec-path-from-shell)))
    '(show-paren-mode t)
    '(tool-bar-mode nil))
 

@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-12 14:53:01 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-12 15:08:45 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -396,7 +396,6 @@ Install some packages from quelpa.
   (use-package doct       :ensure t :commands (doct))
   (use-package ts         :ensure t)
   (use-package s          :ensure t)
-  (use-package org-protocol-capture-html :ensure t :commands (org-protocol-capture-html))
   (use-package auto-package-update :ensure t)
 
   ; Upgrade packages at most every 7 days
@@ -2458,14 +2457,10 @@ Define structure templates.
   (require 'org-tempo)
 
 (setq org-structure-template-alist '(
-  ("a" . "export ascii")
   ("c" . "center")
   ("C" . "comment")
   ("e" . "example")
   ("E" . "export")
-  ("h" . "export html")
-  ("l" . "export latex")
-  ("q" . "quote")
   ("s" . "src")
   ("v" . "verse")))
 #+end_src

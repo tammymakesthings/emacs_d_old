@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-12 14:36:28 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-12 14:46:39 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -398,6 +398,17 @@ Install some packages from quelpa.
   (use-package ts         :ensure t)
   (use-package s          :ensure t)
   (use-package org-protocol-capture-html :ensure t :commands (org-protocol-capture-html))
+  (use-package auto-package-update :ensure t)
+
+  ; Upgrade packages at most every 7 days
+  (setq quelpa-upgrade-interval 7)
+  (setq auto-package-update-interval 7)
+  (setq auto-package-update-prompt-before-update nil)
+  (setq auto-package-update-delete-old-versions t)
+  (setq auto-package-update-hide-results t)
+
+  (add-hook #'after-init-hook #'quelpa-upgrade-all-maybe)
+  (add-hook #'after-init-hook #'auto-package-update-maybe)
 #+end_src
 
 

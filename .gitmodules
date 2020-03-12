@@ -2,24 +2,3 @@
 	path = projects/org-close-out-day
 	url = git@github.com:tammymakesthings/org-close-out-day.git
 	update = rebase
-[submodule "vendor/org"]
-	path = vendor/org
-	url = https://github.com/bzg/org-mode.git
-[submodule "vendor/doct"]
-	path = vendor/doct
-	url = https://github.com/progfolio/doct.git
-[submodule "vendor/ol-get"]
-	path = vendor/ol-get
-	url = https://gitlab.com/xeijin-dev/ol-get.git
-[submodule "vendor/org-jekyll"]
-	path = vendor/org-jekyll
-	url = https://github.com/juanre/org-jekyll.git
-[submodule "vendor/ts"]
-	path = vendor/ts
-	url = https://github.com/alphapapa/ts.el.git
-[submodule "vendor/s"]
-	path = vendor/s
-	url = https://github.com/magnars/s.el.git
-[submodule "vendor/org-protocol-capture-html"]
-	path = vendor/org-protocol-capture-html
-	url = https://github.com/alphapapa/org-protocol-capture-html.git

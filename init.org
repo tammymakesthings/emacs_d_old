@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-12 14:22:00 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-12 14:33:29 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -378,23 +378,26 @@ And, now we're ready to install packages.
 Install some packages from quelpa.
 
 #+begin_src emacs-lisp
+  (unless (package-installed-p 'quelpa)
+    (with-temp-buffer
+      (url-insert-file-contents "https://github.com/quelpa/quelpa/raw/master/quelpa.el")
+      (eval-buffer)
+      (quelpa-self-upgrade)))
+
   (require 'quelpa)
   (quelpa
     '(quelpa-use-package
       :fetcher git
       :url "https://github.com/quelpa/quelpa-use-package.git"))
+
   (require 'quelpa-use-package)
 
   ; Load org-plus-contrib from the orgmode.org elpa repository
   (use-package org        :ensure org-plus-contrib)
-  (use-package doct       :quelpa (doct       :fetcher github :repo "progfolio/doct"))
-  (use-package org-jekyll :quelpa (org-jekyll :fetcher github :repo "juanre/org-jekyll"))
-  (use-package ts         :quelpa (ts         :fetcher github :repo "alphapapa/ts.el"))
-  (use-package s          :quelpa (s          :fetcher github :repo "magnars/s.el"))
-  (use-package org-protocol-capture-html 
-               :quelpa (org-protocol-capture-html 
-                        :fetcher github 
-                        :repo "alphapapa/org-protocol-capture-html"))
+  (use-package doct       :ensure t :commands (doct))
+  (use-package ts         :ensure t)
+  (use-package s          :ensure t)
+  (use-package org-protocol-capture-html :ensure t :commands (org-protocol-capture-html))
 #+end_src
 
 

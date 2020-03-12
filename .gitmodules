@@ -17,12 +17,6 @@
 [submodule "vendor/ts"]
 	path = vendor/ts
 	url = https://github.com/alphapapa/ts.el.git
-[submodule "vendor/dash"]
-	path = vendor/dash
-	url = https://github.com/magnars/dash.el.git
-[submodule "vendor/bufler"]
-	path = vendor/bufler
-	url = https://github.com/alphapapa/bufler.el.git
 [submodule "vendor/s"]
 	path = vendor/s
 	url = https://github.com/magnars/s.el.git

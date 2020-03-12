@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-12 14:33:29 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-12 14:36:28 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1423,12 +1423,8 @@ extended to also allow publishing, literate programming, and all sorts
 of other stuff. As you'll see, it's VERY customizable.
 
 ***** Loading Org Mode
-We load =org-mode= from our =vendor/= tree.
 
 #+begin_src emacs-lisp
-    (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/org/lisp"))
-    (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/org/contrib/lisp"))
-
     (require 'org)
 
     ;; Load org extensions
@@ -2159,7 +2155,7 @@ Load [[https://github.com/progfolio/doct/][doct]], a helper library to declarati
 =org-capture-templates=.
 
 #+begin_src emacs-lisp
-  (load "~/.emacs.d/vendor/doct/doct.el")
+  (require 'doct)
 #+end_src
 
 We define a list of tasks for each day of the week. These are used by
@@ -2393,15 +2389,11 @@ Load up [[https://github.com/alphapapa/org-protocol-capture-html][org-protocol-c
 org-mode. Requires the [[https://github.com/magnars/s.el][s.el]] library and [[https://pandoc.org/][pandoc]].
 
 #+begin_src emacs-lisp :tangle no
-  (add-to-list 'load-path (concat (file-truename user-emacs-directory) "vendor/s"))
-  (add-to-list 'load-path (concat (file-truename user-emacs-directory)
-                                  "vendor/org-protocol-capture-html"))
-
   (require 'org-protocol-capture-html)
 
   (add-to-list 'org-capture-templates '("w" "Web site" entry
                                          (file "")
-                                         "* %a :website:\n\n%U %?\n\n%:initial"))
+                                         "* %a :website:\n\n%U %?\n\n%:initial") t)
 #+end_src
 
 ***** Refile Settings

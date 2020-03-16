@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-12 15:08:45 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-14 17:59:27 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -491,51 +491,6 @@ http://www.emacswiki.org/emacs/InteractivelyDoThings
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 #+end_src
 
-***** Customize Control-g Behavior
-
-From [[https://with-emacs.com/posts/tips/quit-current-context/][with-emacs]]. Define a new keyboard-quit function that doesn't clobber
-other windows.
-
-#+begin_src emacs-lisp 
-  (defun we/keyboard-quit-context+ ()
-    "Quit current context.
-
-  This function is a combination of `keyboard-quit' and
-  `keyboard-escape-quit' with some parts omitted and some custom
-  behavior added."
-    (interactive)
-    (cond ((region-active-p)
-           ;; Avoid adding the region to the window selection.
-           (setq saved-region-selection nil)
-           (let (select-active-regions)
-             (deactivate-mark)))
-          ((eq last-command 'mode-exited) nil)
-          (current-prefix-arg
-           nil)
-          (defining-kbd-macro
-            (message
-             (substitute-command-keys
-              "Quit is ignored during macro defintion, use \\[kmacro-end-macro] if you want to stop macro definition"))
-            (cancel-kbd-macro-events))
-          ((active-minibuffer-window)
-           (when (get-buffer-window "*Completions*")
-             ;; hide completions first so point stays in active window when
-             ;; outside the minibuffer
-             (minibuffer-hide-completions))
-           (abort-recursive-edit))
-          (t
-           (when completion-in-region-mode
-             (completion-in-region-mode -1))
-           (let ((debug-on-quit nil))
-             (signal 'quit nil)))))
-#+end_src
-
-And now bind it to the keyboard-quit action (C-g by default).
-
-#+begin_src emacs-lisp :tangle yes
-  (global-set-key [remap keyboard-quit] #'we/keyboard-quit-context+)
-#+end_src
-
 ***** Smex - Easier execution of M-x commands.
 
 Smex enhances M-x to allow easier execution of commands. It provides
@@ -557,7 +512,7 @@ http://www.emacswiki.org/emacs/Smex
 
 ***** Magit - Git UI
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (require 'magit)
 
   (if (fboundp 'magit)
@@ -650,6 +605,12 @@ Diable the terminal bell.
 
   (setq column-number-mode t)
   (setq line-number-mode t)
+
+  (defun tlc/linum-hook (&optional linum-state)
+    (if (>= emacs-major-version 26)
+        (display-line-numbers-mode (or linum-state 0))
+      (linum-mode (or linum-state 0))))
+  (add-hook 'org-mode-hook 'tlc/linum-hook)
 #+end_src
 
 ***** Color Themes/Fonts
@@ -664,34 +625,38 @@ Initialize the theme system.
 
   (add-to-list 'custom-theme-load-path "~/.emacs.d/themes")
   (add-to-list 'load-path "~/.emacs.d/themes")
+
+  (defvar tlc/theme-to-enable 'doom 
+   "Specify which of the following theme blocks to enable.")
 #+end_src
 
-Load the [[https://draculatheme.com/emacs/][dracula]] theme if this block is tangled.
-
-#+begin_src emacs-lisp :tangle no
-  (load-theme 'dracula t)
-
-  (require 'hl-line)
-  (set-face-attribute 'default nil :height 140)
-  (set-face-background hl-line-face "grey20")
-#+end_src
-
-Load the [[https://github.com/hlissner/emacs-doom-themes][doom-themes]] system if this block is tangled.
-
-#+begin_src emacs-lisp :tangle yes
-  (setq doom-themes-enable-bold t)
-  (setq doom-themes-enable-italic t)
-  (load-theme 'doom-challenger-deep t)
-
-  (doom-themes-visual-bell-config)
-  (doom-themes-org-config)
-  (setq nlinum-highlight-current-line t)
-#+end_src
-
-Increase the font size for better readability.
+Load the [[https://draculatheme.com/emacs/][dracula]] theme if =tlc/theme-to-enable= is set to ='dracula=.
 
 #+begin_src emacs-lisp
-  (set-face-attribute 'default nil :height 110)
+  (when (eq tlc/theme-to-enable 'dracula)
+    (progn
+      (message "Enabling dracula theme configuration")
+      (load-theme 'dracula t)
+
+      (require 'hl-line)
+      (set-face-attribute 'default nil :height 140)
+      (set-face-background hl-line-face "grey20")))
+#+end_src
+
+Load the [[https://github.com/hlissner/emacs-doom-themes][doom-themes]] system if =tlc/theme-to-enable= is set to ='doom=.
+
+#+begin_src emacs-lisp
+  (when (eq tlc/theme-to-enable 'doom)
+    (progn
+      (message "Enabling doom theme configuration")
+      (setq doom-themes-enable-bold t)
+      (setq doom-themes-enable-italic t)
+      (load-theme 'doom-challenger-deep t)
+
+      (doom-themes-visual-bell-config)
+      (doom-themes-org-config)
+      (setq nlinum-highlight-current-line t)
+      (set-face-attribute 'default nil :height 110)))
 #+end_src
 
 ***** UI Font Selection
@@ -992,17 +957,6 @@ Add the C-; command to comment a line.
   (global-set-key (kbd "C-;") 'toggle-comment-on-line)
 #+end_src
 
-This fixes a weird MacOS X pasteboard error.
-
-#+begin_src emacs-lisp
-  (when (eq system-type 'darwin)
-    ;; fix weird os x kill error
-    (defun ns-get-pasteboard ()
-      "Returns the value of the pasteboard, or nil for unsupported formats."
-      (condition-case nil
-          (ns-get-selection-internal 'CLIPBOARD)
-        (quit nil))))
-#+end_src
 
 Disable electric indent.
 
@@ -1666,6 +1620,157 @@ selected subtree.
     (org-set-property "STARTUP" "folded"))
 #+end_src
 
+******* Count Words in an Org file
+
+From [[https://orgmode.org/worg/org-hacks.html][here]].
+
+#+begin_src emacs-lisp
+(defun org-word-count (beg end
+                           &optional count-latex-macro-args?
+                           count-footnotes?)
+  "Report the number of words in the Org mode buffer or selected region.
+Ignores:
+- comments
+- tables
+- source code blocks (#+BEGIN_SRC ... #+END_SRC, and inline blocks)
+- hyperlinks (but does count words in hyperlink descriptions)
+- tags, priorities, and TODO keywords in headers
+- sections tagged as 'not for export'.
+
+The text of footnote definitions is ignored, unless the optional argument
+COUNT-FOOTNOTES? is non-nil.
+
+If the optional argument COUNT-LATEX-MACRO-ARGS? is non-nil, the word count
+includes LaTeX macro arguments (the material between {curly braces}).
+Otherwise, and by default, every LaTeX macro counts as 1 word regardless
+of its arguments."
+  (interactive "r")
+  (unless mark-active
+    (setf beg (point-min)
+          end (point-max)))
+  (let ((wc 0)
+        (latex-macro-regexp "\\\\[A-Za-z]+\\(\\[[^]]*\\]\\|\\){\\([^}]*\\)}"))
+    (save-excursion
+      (goto-char beg)
+      (while (< (point) end)
+        (cond
+         ;; Ignore comments.
+         ((or (org-in-commented-line) (org-at-table-p))
+          nil)
+         ;; Ignore hyperlinks. But if link has a description, count
+         ;; the words within the description.
+         ((looking-at org-bracket-link-analytic-regexp)
+          (when (match-string-no-properties 5)
+            (let ((desc (match-string-no-properties 5)))
+              (save-match-data
+                (incf wc (length (remove "" (org-split-string
+                                             desc "\\W")))))))
+          (goto-char (match-end 0)))
+         ((looking-at org-any-link-re)
+          (goto-char (match-end 0)))
+         ;; Ignore source code blocks.
+         ((org-in-regexps-block-p "^#\\+BEGIN_SRC\\W" "^#\\+END_SRC\\W")
+          nil)
+         ;; Ignore inline source blocks, counting them as 1 word.
+         ((save-excursion
+            (backward-char)
+            (looking-at org-babel-inline-src-block-regexp))
+          (goto-char (match-end 0))
+          (setf wc (+ 2 wc)))
+         ;; Count latex macros as 1 word, ignoring their arguments.
+         ((save-excursion
+            (backward-char)
+            (looking-at latex-macro-regexp))
+          (goto-char (if count-latex-macro-args?
+                         (match-beginning 2)
+                       (match-end 0)))
+          (setf wc (+ 2 wc)))
+         ;; Ignore footnotes.
+         ((and (not count-footnotes?)
+               (or (org-footnote-at-definition-p)
+                   (org-footnote-at-reference-p)))
+          nil)
+         (t
+          (let ((contexts (org-context)))
+            (cond
+             ;; Ignore tags and TODO keywords, etc.
+             ((or (assoc :todo-keyword contexts)
+                  (assoc :priority contexts)
+                  (assoc :keyword contexts)
+                  (assoc :checkbox contexts))
+              nil)
+             ;; Ignore sections marked with tags that are
+             ;; excluded from export.
+             ((assoc :tags contexts)
+              (if (intersection (org-get-tags-at) org-export-exclude-tags
+                                :test 'equal)
+                  (org-forward-same-level 1)
+                nil))
+             (t
+              (incf wc))))))
+        (re-search-forward "\\w+\\W*")))
+    (message (format "%d words in %s." wc
+                     (if mark-active "region" "buffer")))))
+#+end_src
+
+******* Check for misplaced SCHEDULED and DEADLINE cookies
+
+From [[https://orgmode.org/worg/org-hacks.html][here]].
+
+#+begin_src emacs-lisp
+(defun org-check-misplaced-cookies ()
+  "Check misformatted entries in the current buffer."
+  (interactive)
+  (show-all)
+  (org-map-entries
+   (lambda ()
+     (when (and (move-beginning-of-line 2)
+                (not (looking-at org-heading-regexp)))
+       (if (or (and (org-get-scheduled-time (point))
+                    (not (looking-at (concat "^.*" org-scheduled-regexp))))
+               (and (org-get-deadline-time (point))
+                    (not (looking-at (concat "^.*" org-deadline-regexp)))))
+           (when (y-or-n-p "Fix this subtree? ")
+             (message "Call the function again when you're done fixing this
+subtree.")
+             (recursive-edit))
+         (message "All subtrees checked."))))))
+#+end_src
+
+******* Sort an org list by checkbox type.
+
+From [[https://orgmode.org/worg/org-hacks.html][here]].
+
+#+begin_src emacs-lisp
+(defun org-sort-list-by-checkbox-type ()
+  "Sort list items according to Checkbox state."
+  (interactive)
+  (org-sort-list
+   nil ?f
+   (lambda ()
+     (if (looking-at org-list-full-item-re)
+         (cdr (assoc (match-string 3)
+                     '(("[X]" . 1) ("[-]" . 2) ("[ ]" . 3) (nil . 4))))
+       4))))
+#+end_src
+
+******* Mark a subtree done along with all subheadings
+
+From [[https://orgmode.org/worg/org-hacks.html][here]].
+
+#+begin_src emacs-lisp
+(defun org-mark-subtree-done ()
+  (interactive)
+  (org-mark-subtree)
+  (let ((limit (point)))
+    (save-excursion
+      (exchange-point-and-mark)
+      (while (> (point) limit)
+        (org-todo "DONE")
+        (outline-previous-visible-heading 1))
+      (org-todo "DONE"))))
+#+end_src
+
 ***** Org Key Bindings
 #+begin_src emacs-lisp
   (global-set-key "\C-cc" 'org-capture)
@@ -1694,8 +1799,7 @@ Set the archiving location and options.
 #+end_src
 
 Enable archiving of a subtree to provide context from the original
-file, rather than flattening. See
-[[https://gist.github.com/osamu2001/370843]].
+file, rather than flattening. See [[https://gist.github.com/osamu2001/370843]].
 
 #+begin_src emacs-lisp
   (defadvice org-archive-subtree (around fix-hierarchy activate)
@@ -3414,4 +3518,10 @@ refactored out to somewhere else.
    ;; Your init file should contain only one such instance.
    ;; If there is more than one, they won't work right.
    )
+#+end_src
+
+*** And we're done!
+
+#+begin_src emacs-lisp
+  (message "init.el fully executed")
 #+end_src

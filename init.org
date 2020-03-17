@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-14 17:59:27 tammy>
+#+DATE: Time-stamp: <2020-03-17 11:04:23 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -203,6 +203,8 @@ it. However, I do make the following assumptions:
 ***** [[*Gnu Server][Gnu Server]]
 ***** [[*Miscellaneous Customizations][Miscellaneous Customizations]]
 ***** [[*customize Settings][customize Settings]]
+***** [[*Load OS-specific files][Load OS-specific files]]
+***** [[*Load system-specific files][Load system-specific files]]
 
 *** Preliminaries
 
@@ -391,12 +393,39 @@ Install some packages from quelpa.
 
   (require 'quelpa-use-package)
 
+  (use-package bind-key
+               :ensure t
+               :config (add-to-list 'same-window-buffer-names "*Personal Keybindings*"))
+
   ; Load org-plus-contrib from the orgmode.org elpa repository
   (use-package org        :ensure org-plus-contrib)
   (use-package doct       :ensure t :commands (doct))
   (use-package ts         :ensure t)
   (use-package s          :ensure t)
   (use-package auto-package-update :ensure t)
+  (use-package org-super-agenda
+               :quelpa (org-super-agenda 
+                        :fetcher github 
+                        :repo "alphapapa/org-super-agenda"))
+
+  (use-package org-sidebar
+               :quelpa (org-sidebar 
+                        :fetcher github 
+                        :repo "alphapapa/org-sidebar"))
+
+  (use-package org-ql
+               :quelpa (org-ql 
+                        :fetcher github 
+                        :repo "alphapapa/org-ql"))
+  (use-package bufler
+               :quelpa (bufler 
+                        :fetcher github 
+                        :repo "alphapapa/bufler.el")
+               :bind (
+                        ("\C-xb"    . bufler-switch-buffer)
+                        ("\C-x\C-b" . bufler-list)
+                     ))
+               
 
   ; Upgrade packages at most every 7 days
   (setq quelpa-upgrade-interval 7)
@@ -1338,7 +1367,6 @@ of other stuff. As you'll see, it's VERY customizable.
 
   (eval-after-load 'org
    '(org-load-modules-maybe t))
-
 #+end_src
 
 Load org-babel (code) extensions for languages we use.
@@ -1787,6 +1815,17 @@ From [[https://orgmode.org/worg/org-hacks.html][here]].
 
   (global-set-key (kbd "<f7>") 'org-agenda)
   (global-set-key (kbd "<f8>") 'org-agenda-list)
+
+  (require 'org-super-agenda)
+  (require 'org-ql)
+  (require 'org-sidebar)
+
+  (defun tlc/org-sidebar-toggle (&optional turn-on-both)
+    "Turn on org sidebars."
+    (interactive)
+    (org-sidebar-toggle)
+    (org-sidebar-tree-toggle))
+  (define-key org-mode-map "\C-c\/" 'tlc/org-sidebar-toggle)
 #+end_src
 
 ***** Archiving Settings
@@ -3057,6 +3096,11 @@ From https://karl-voit.at/2019/11/03/org-projects/.
    finally return (append '(hline ("" "Group" "Test" "Status" "Low" "Value" "High") hline) newtbl)))
 #+end_src
 
+***** Org Sidebar
+
+#+begin_src emacs-lisp
+#+end_src
+
 ***** Org publishing
 Helper to export org subtrees to multiple files.
 
@@ -3462,26 +3506,40 @@ If the =*scratch*= buffer doesn't exist, it'll be created. If it does, a new
 buffer of the form untitled-1, Untitled-2, etc. will be created. If the
 buffer name is not =*scratch*=, you'll be offered a chance to save it.
 
-From [[http://ergoemacs.org/emacs/emacs_new_empty_buffer.html][http://ergoemacs.org/emacs/emacs_new_empty_buffer.html]].
+From [[http://ergoemacs.org/emacs/emacs_new_empty_buffer.html][http://ergoemacs.org/emacs/emacs_new_empty_buffer.html]], modified by me.
 
 #+begin_src emacs-lisp
-  (defun tlc/new-empty-buffer nil
+  (defun tlc/new-empty-buffer (&optional location)
     "Create a new empty buffer.
 
   If the *scratch* buffer doesn't exist, it'll be created. If it does, a new
   buffer of the form untitled-1, Untitled-2, etc. will be created. If the
-  buffer name is not *scratch*, you'll be offered a chance to save it."
-    (interactive)
+  buffer name is not *scratch*, you'll be offered a chance to save it. 
+
+  The optional `location` parameter determines where the new buffer will open.
+  If it is set to the value 'frame, the buffer will open in a new frame. If it
+  is set to the value 'window, or to another truthy value (such as via the
+  prefix arg) the buffer will open in a new window. Otherwise, it'll open in
+  the current window."
+    (interactive "P")
     (if (get-buffer "*scratch*")
         (progn
           (let (($buf (generate-new-buffer "untitled")))
-            (switch-to-buffer $buf)
+            (cond
+              ((= location 'frame) (switch-to-buffer-other-frame $buf))
+              ((= location 'window) (switch-to-buffer-new-window $buf))
+              ((bound-and-true-p location) (switch-to-buffer-new-window $buf))
+              (t (switch-to-buffer $buf)))
             (funcall initial-major-mode)
             (setq buffer-offer-save t)
             $buf))
       (progn
           (let (($buf (generate-new-buffer "*scratch*")))
-            (switch-to-buffer $buf)
+            (cond
+              ((= location 'frame) (switch-to-buffer-other-frame $buf))
+              ((= location 'window) (switch-to-buffer-new-window $buf))
+              ((bound-and-true-p location) (switch-to-buffer-new-window $buf))
+              (t (switch-to-buffer $buf)))
             (funcall initial-major-mode)
             (setq buffer-offer-save nil)
             $buf))))
@@ -3518,6 +3576,95 @@ refactored out to somewhere else.
    ;; Your init file should contain only one such instance.
    ;; If there is more than one, they won't work right.
    )
+#+end_src
+
+*** Load OS-specific files
+
+This defines a system-specific file by OS type (Windows, Mac, etc.) so
+specific settings can be overridden.
+
+#+begin_src emacs-lisp
+  (let ((system-file (concat user-emacs-directory 
+                             "settings-os-" (subst-char-in-string ?/ ?- (symbol-name system-type)) ".el")))
+    (if (file-exists-p system-file)
+      (load-file system-file)))
+#+end_src
+
+***** System-Specific FIle - Linux
+
+#+begin_src emacs-lisp :tangle settings-os-gnu-linux.el
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; OS-specific settings - Linux
+  ;; Tangled from init.org - do not modify directly
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (provide 'settings-os-gnu-linux)
+#+end_src
+
+***** System-Specific File - Windows
+
+#+begin_src emacs-lisp :tangle settings-os-windows-nt.el
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; OS-specific settings - Windows
+  ;; Tangled from init.org - do not modify directly
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (provide 'settings-os-windows-nt)
+#+end_src
+
+***** System-Specific File - MacOS X
+
+#+begin_src emacs-lisp :tangle settings-os-darwin.el
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; OS-specific settings - MacOS X
+  ;; Tangled from init.org - do not modify directly
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (use-package exec-path-from-shell
+               :if (memq window-system '(mac ns))
+               :ensure t
+               :config (exec-path-from-shell-initialize))
+
+  (provide 'settings-os-darwin
+#+end_src
+
+*** Load system-specific files 
+
+This defines a system-specific file by hostname (work computer, home computer,
+etc). If these are present, the correct one is loaded.
+
+#+begin_src emacs-lisp
+  (let ((system-file (concat user-emacs-directory "settings-system-" (downcase (system-name)) ".el")))
+    (if (file-exists-p system-file)
+      (load-file system-file)))
+#+end_src
+
+***** System-Specific Settings - Work Laptop
+
+#+begin_src emacs-lisp :tangle settings-system-sl-wl-0010104.el
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; System-specific settings - work laptop (SL-WL-0010104.el)
+  ;; Tangled from init.org - do not modify directly
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (setq user-mail-address "tammy.cravit@mindbodyonline.com")
+  (setq user-name "Tammy Cravit")
+
+  (provide 'settings-system-sl-wl-0010104)
+#+end_src
+
+***** System-Specific Settings - Home Laptop (Lenovo)
+
+#+begin_src emacs-lisp :tangle settings-system-wonderland.el
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; System-specific settings - work laptop (SL-WL-0010104.el)
+  ;; Tangled from init.org - do not modify directly
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (setq user-mail-address "tammymakesthings@gmail.com")
+  (setq user-name "Tammy Cravit")
+
+  (provide 'settings-system-wonderland)
 #+end_src
 
 *** And we're done!

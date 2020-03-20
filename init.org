@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-18 06:30:50 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-20 14:58:27 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -3825,11 +3825,12 @@ etc). If these are present, the correct one is loaded.
   (provide 'settings-system-sl-wl-0010104)
 #+end_src
 
+
 ***** System-Specific Settings - Home Laptop (Lenovo)
 
 #+begin_src emacs-lisp :tangle settings-system-wonderland.el
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; System-specific settings - work laptop (SL-WL-0010104.el)
+  ;; System-specific settings - home Lenovo laptop (wonderland)
   ;; Tangled from init.org - do not modify directly
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -3839,8 +3840,25 @@ etc). If these are present, the correct one is loaded.
   (provide 'settings-system-wonderland)
 #+end_src
 
+***** System-Specifig Settings - Lab VPS (tmtlab)
+
+#+begin_src emacs-lisp :tangle settings-system-tmtlab.el
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; System-specific settings - lab VPS (tmtlab)
+  ;; Tangled from init.org - do not modify directly
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (setq user-mail-address "tammymakesthings@gmail.com")
+  (setq user-name "Tammy Cravit")
+
+  (provide 'settings-system-tmtlab)
+#+end_src
+
 *** And we're done!
 
 #+begin_src emacs-lisp
   (message "init.el fully executed")
 #+end_src
+
+
+

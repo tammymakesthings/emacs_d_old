@@ -19,3 +19,4 @@ dot-gnus.el
 *bookmarks*
 init.el.firstrun
 .last-package-update-day
+settings-*.el

@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-17 11:04:23 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-18 06:30:50 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -437,7 +437,6 @@ Install some packages from quelpa.
   (add-hook #'after-init-hook #'quelpa-upgrade-all-maybe)
   (add-hook #'after-init-hook #'auto-package-update-maybe)
 #+end_src
-
 
 *** Shell Integration
 
@@ -1327,6 +1326,179 @@ file save hook.
     (setq fill-column 72)
     (turn-on-auto-fill))
   (add-hook 'message-mode-hook 'my-message-mode-setup)
+#+end_src
+
+*** Elfeed Mode
+
+[[https://github.com/skeeto/elfeed][elfeed]] is an RSS reader for Emacs. Currently disabled.
+
+Load the =elfeed= package.
+
+#+begin_src emacs-lisp :tangle no
+  (use-package elfeed
+               :quelpa (elfeed
+                        :fetcher github 
+                        :repo "skeeto/elfeed")
+               :bind ("C-c f" . elfeed))
+
+  (use-package elfeed-goodies
+               :quelpa (elfeed-goodies
+                        :fetcher github
+                        :repo "algernon/elfeed-goodies"))
+
+  (use-package elfeed-protocol :ensure t)
+
+  (require 'elfeed)
+  (require 'elfeed-goodies)
+  (require 'elfeed-protocol)
+
+  (elfeed-goodies/setup)
+#+end_src
+
+Set up =elfeed= options.
+
+#+begin_src emacs-lisp :tangle no
+  (setq elfeed-use-curl t)
+  (elfeed-set-timeout 36000)
+  (setq elfeed-curl-extra-arguments '("--insecure"))
+  (setq-default elfeed-search-filter "+unread ")
+
+  (global-set-key (kbd "C-x w") 'elfeed)
+
+  (setf url-queue-timeout 30)
+
+  (add-hook 'elfeed-new-entry-hook
+            (elfeed-make-tagger :before "3 days ago"
+                                :remove 'unread))
+  (elfeed-protocol-enable)
+#+end_src
+
+Enable capturing of links from Elfeed entries. From [[https://yiming.dev/blog/2016/01/28/add-org-store-link-entry-for-elfeed/][here]].
+
+#+begin_src emacs-lisp :tangle no
+(defun private/org-elfeed-entry-store-link ()
+  (when elfeed-show-entry
+    (let* ((link (elfeed-entry-link elfeed-show-entry))
+           (title (elfeed-entry-title elfeed-show-entry)))
+      (org-store-link-props
+       :link link
+       :description title)
+      )))
+
+(add-hook 'org-store-link-functions
+          'private/org-elfeed-entry-store-link)
+#+end_src
+
+Set up my list of RSS feeds.
+
+#+begin_src emacs-lisp :tangle no
+  (setq elfeed-feeds
+    '(
+       ; ELectronics
+       ("https://autismwomensnetwork.org/feed/" electronics)
+       ("http://feeds.feedburner.com/electronics-lab/CpKG" electronics)
+       ("http://www.righto.com/feeds/posts/default" electronics)
+       ("http://thesignalpath.com/blogs/feed/" electronics)
+       ("https://blog.adafruit.com/feed/" electronics)
+       ("http://feeds.feedburner.com/baldengineer" electronics)
+       ("https://hackaday.com/feed/" electronics)
+       ("https://www.bunniestudios.com/blog/?feed=rss2" electronics)
+       ("https://www.evilmadscientist.com/feed/" electronics)
+       ("https://www.bigmessowires.com/feed/" electronics)
+       ("https://ripitapart.com/feed/" electronics)
+       ("https://blog.thea.codes/feed.xml" electronics)
+       ("https://mathgrrl.com/feed/" electronics) 
+       ("https://www.stupid-projects.com/feed/" electronics)
+       ("http://www.industrialalchemy.org/feed.xml" electronics) 
+       ; Emacs/Org
+       ("https://christiantietze.de/feed.atom" emacs)
+       ("https://with-emacs.com/rss.xml" emacs) 
+       ("https://irreal.org/blog/?feed=rss2" emacs) 
+       ("https://karl-voit.at/feeds/lazyblorg-all.atom_1.0.links-only.xml" emacs) 
+       ("https://sachachua.com/blog/category/emacs-news/feed/" emacs) 
+       ("https://arenzana.org/feed/" emacs)
+       ; IT/DevOps
+       ("http://testobsessed.com/feed/" devops) 
+       ("https://m.signalvnoise.com/feed" devops)
+       ("https://blog.digitalocean.com/rss/" devops)
+       ("https://techcommunity.microsoft.com/gxcuf89792/rss/board?board.id=SQLServer" devops) 
+       ; Business/Leadership
+       ("http://evilhrlady.org/feed" business) 
+       ("http://feeds.feedburner.com/successful-blog/WuQV" business) 
+       ("http://www.askamanager.org/feed" business) 
+       ("http://www.aspire-cs.com/feed" business) 
+       ("http://sethgodin.typepad.com/seths_blog/atom.xml" business) 
+       ("http://www.classycareergirl.com/feed/" business)
+       ("http://feeds.feedburner.com/ThePeopleEquation" business) 
+       ("http://randsinrepose.com/feed/" business) 
+       ("http://feeds.feedburner.com/CareerAdvancementBlog" business) 
+       ("http://feeds.feedblitz.com/artpetty" business) 
+       ("http://feeds.lexblog.com/FMLAInsights" business) 
+       ("http://letsgrowleaders.com/feed/" business) 
+       ("https://stratechery.com/feed/" business) 
+       ("http://www.threestarleadership.com/feed" business)
+       ("https://www.shenegotiates.com/blog?format=RSS" business)
+       ; Law
+       ("http://feeds.feedburner.com/ScrewYouGuysImGoingHome" law) 
+       ("http://www.scotusblog.com/feed/atom/" law) 
+       ("http://blog.ericgoldman.org/feed" law) 
+       ("https://balkin.blogspot.com/feeds/posts/default" law) 
+       ("https://takecareblog.com/about-us/take-care-rss-feed" law)
+       ("http://reason.com/volokh/atom.xml" law) 
+       ; LGBTQ
+       ("http://transgriot.blogspot.com/feeds/posts/default" lgbtq)
+       ; Productivity
+       ("http://www.bohoberry.com/feed/" productivity)
+       ("https://culturedcode.com/things/blog/feed/rss.xml" productivity)
+       ("http://www.thelazygeniuscollective.com/blog?format=RSS" productivity)
+       ("https://blog.doist.com/feed" productivity)
+       ("https://www.pagetable.com/?feed=rss2" productivity)
+       ; Science
+       ("http://www.planetary.org/system/rss/channel.jsp?feedID=328434498" science) 
+       ("http://plus.maths.org/content/rss.xml" science)
+       ; Advice
+       ("http://captainawkward.com/feed/" advice) 
+       ; Miscellany
+       ("http://feeds.feedburner.com/emptywheel/cAUy" misc) 
+       ("http://fivethirtyeight.com/features/feed/" misc) 
+       ("http://daringfireball.net/feeds/main" misc) 
+       ("http://www.rolereboot.org/feed/" misc) 
+       ; Music
+       ("http://cdm.link/feed/" music)
+       ("https://www.recordingrevolution.com/feed/" music)
+       ("https://soundsandgear.com/feed/" music) 
+       ("https://resoundsound.com/feed/" music)
+       ; Stationery
+       ("http://www.gourmetpens.com/feeds/posts/default" stationery) 
+       ("http://bulletjournaljoy.com/feed/" stationery) 
+       ("https://www.penaddict.com/blog?format=RSS" stationery) 
+       ("https://www.penchalet.com/blog/feed/" stationery) 
+       ("https://www.mountainofink.com/blog?format=RSS" stationery) 
+       ("https://www.wellappointeddesk.com/feed/" stationery) 
+       ("https://blog.gouletpens.com/feed" stationery) 
+       ("https://www.notebookstories.com/feed/" stationery) 
+       ("https://clickypost.com/blog?format=RSS" stationery)
+       ("http://feeds.feedburner.com/thefinerpoint/Pfxr" stationery) 
+       ("https://www.abetterdesk.com/blog?format=RSS)" stationery)
+       ("http://rediscoveranalog.com/feed/" stationery) 
+       ; Programming
+       ("https://nedbatchelder.com/blog/rss.xml" programming) 
+       ("http://weblog.rubyonrails.org/feed/atom.xml" programming) 
+       ("https://freedom-to-tinker.com/feed/" programming) 
+       ; Security
+       ("http://krebsonsecurity.com/feed/" security)
+       ("http://feeds.feedburner.com/AFewThoughtsOnCryptographicEngineering" security)
+       ("https://www.cs.columbia.edu/~smb/blog/control/blog.xml" security)
+       ("https://www.schneier.com/blog/atom.xml" security) 
+       ("http://cyberlaw.stanford.edu/feeds/blogs.rss" security)
+       ("http://www.rootwyrm.com/feed/" security) 
+       ("https://securelist.com/feed/" security) 
+       ("https://www.justsecurity.org/feed/" security) 
+       ("https://blog.cryptographyengineering.com/feed/" security) 
+       ("https://electrospaces.blogspot.com/feeds/posts/default" security) 
+       ("https://zerosum0x0.blogspot.com/feeds/posts/default" security) 
+       ("https://api.connect.symantec.com/rss/v1/blogs/rss.xml" security)
+       ))
 #+end_src
 
 *** Org Mode

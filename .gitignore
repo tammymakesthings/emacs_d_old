@@ -21,3 +21,4 @@ init.el.firstrun
 .last-package-update-day
 settings-*.el
 diary
+ob-text.el

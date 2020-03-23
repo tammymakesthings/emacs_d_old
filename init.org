@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-23 11:02:27 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-23 11:33:15 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1620,6 +1620,60 @@ we need.
 (setq org-export-backends '(org latex taskjuggler publish html ascii md))
 #+end_src
 
+***** Org Text Export
+
+This is a hack to allow me to tangle literal text blocks from org files with
+babel. 
+
+Create the hack file.
+
+#+begin_src emacs-lisp :tangle "ob-text.el"
+  ;;; ob-text.el --- Tangle raw text blocks in org=babel.
+  ;; Copyright 2020 Tammy Cravit
+  ;;
+  ;; License: GNU General Public License version 3, or (at your option) any later version
+  ;; Author: Tammy Cravit <tammymakesthings@gmail.com>
+  ;; Maintainer: Tammy Cravit <tammymakesthings@gmail.com>
+  ;; Keywords: org babel text
+  ;; URL: https://github.com/tammymakesthings/ob-text
+  ;; Created: 2020-03-13
+  ;; Version: 0.1
+  ;; Package-Requires: ((org "8"))
+  ;
+  ;;; Commentary:
+  ;;
+  ;; Supports tangling literal text blocks from Org files.
+
+  (require 'org)
+  (require 'ob)
+
+  (defgroup ob-text nil "Tangle raw text blocks." :group 'org)
+  (defcustom ob-text:default-dest "ob-text.txt"
+    "Default destination for tangled text blocks."
+    :group 'ob-text :type 'string)
+
+  ;;;###autoload
+  (defun org-babel-execute:text (body params)
+    "org-babel execution hook."
+    (let (
+          (text (or (cddr (assoc :var params))
+                    body
+                    "")))
+      text))
+	  
+  ;;;###autoload
+  (eval-after-load "org"
+    '(add-to-list 'org-src-lang-modes '("text" . text)))
+
+  (provide 'ob-text)
+#end_src
+
+And now we load it.
+
+#+begin_src emacs-lisp
+  (require 'ob-text)
+#+end_src
+
 ***** Org/WSL Fix
 
 Under Windows (especially with WSL) =org-open-file= will use
@@ -2113,10 +2167,9 @@ Set some options that speed up agenda processing.
   (setq org-agenda-ignore-drawer-properties '(effort appt category))
 #+end_src
 
-Include sunrise and sunset in the diary. From [[https://orgmode.org/worg/org-hacks.html#org6abe7b1][here]]. Needs the following to be
-in your =~/.emacs.d/diary= file.
+Generate the diary file in =~/.emacs.d/diary=.
 
-#+begin_export :tangle ~/.emacs.d/diary
+#+begin_src org text :tangle ~/.emacs.d/diary
 %%(diary-sunrise)Sunrise in %s
 %%(diary-sunset)
 %%(org-lunar-phases)
@@ -2131,7 +2184,9 @@ in your =~/.emacs.d/diary= file.
 12/29/1940 Irwin's birthday
 %%(diary-cyclic 14 16 8 2019) Payday
 &%%(diary-float 11 4 4) Thanksgiving
-#+end_export
+#+end_src
+
+Include sunrise and sunset in the diary. From [[https://orgmode.org/worg/org-hacks.html#org6abe7b1][here]]. 
 
 #+begin_src emacs-lisp
 (setq calendar-latitude 33.454550)

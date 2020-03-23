@@ -20,3 +20,4 @@ dot-gnus.el
 init.el.firstrun
 .last-package-update-day
 settings-*.el
+diary

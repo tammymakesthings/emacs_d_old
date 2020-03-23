@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-23 10:22:53 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-23 10:31:08 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -2096,7 +2096,7 @@ Set general org-agenda options.
   (setq org-agenda-skip-scheduled-if-done t)
   (setq org-agenda-skip-deadline-if-done t)
   (setq org-agenda-include-all-todo t)
-  (setq org-agenda-include-diary nil)
+  (setq org-agenda-include-diary t)
   (setq org-agenda-tags-todo-honor-ignore-options t)
   (setq org-agenda-todo-list-sublevels nil)
 
@@ -2112,6 +2112,45 @@ Set some options that speed up agenda processing.
   (setq org-agenda-ignore-drawer-properties '(effort appt category))
 #+end_src
 
+Include sunrise and sunset in the diary. From [[https://orgmode.org/worg/org-hacks.html#org6abe7b1][here]]. Needs the following to be
+in your =~/.emacs.d/diary= file.
+
+#+begin_export :tangle ~/.emacs.d/diary
+%%(diary-sunrise)Sunrise in %s
+%%(diary-sunset)
+#+end_export
+
+#+begin_src emacs-lisp
+(setq calendar-latitude 33.454550)
+(setq calendar-longitude -112.055730)
+(setq calendar-location-name "Phoenix, AZ")
+
+(autoload 'solar-sunrise-sunset "solar.el")
+(autoload 'solar-time-string "solar.el")
+(defun diary-sunrise ()
+  "Local time of sunrise as a diary entry.
+The diary entry can contain `%s' which will be replaced with
+`calendar-location-name'."
+  (let ((l (solar-sunrise-sunset date)))
+    (when (car l)
+      (concat
+       (if (string= entry "")
+           "Sunrise"
+         (format entry (eval calendar-location-name))) " "
+         (solar-time-string (caar l) nil)))))
+
+(defun diary-sunset ()
+  "Local time of sunset as a diary entry.
+The diary entry can contain `%s' which will be replaced with
+`calendar-location-name'."
+  (let ((l (solar-sunrise-sunset date)))
+    (when (cadr l)
+      (concat
+       (if (string= entry "")
+           "Sunset"
+         (format entry (eval calendar-location-name))) " "
+         (solar-time-string (caadr l) nil)))))
+#+end_src
 
 Set up where org windows appear.
 

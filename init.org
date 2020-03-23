@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-23 10:13:51 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-23 10:22:53 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -212,6 +212,8 @@ it. However, I do make the following assumptions:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Preliminary Configuration Items
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(require 'cl)
 
 #+end_src
 
@@ -3355,6 +3357,17 @@ Always publish org projects, even if the source files are unchanged.
   (setq org-publish-use-timestamps-flag nil)
 #+end_src
 
+Helper function to preview LaTeX fragments. From [[https://orgmode.org/worg/org-hacks.html#org207f29e][here]].
+
+#+begin_src emacs-lisp
+  (defun org-edit-preview-latex-fragment ()
+    "Write latex fragment from source to parent buffer and preview it."
+    (interactive)
+    (org-src-in-org-buffer (org-preview-latex-fragment)))
+
+  (define-key org-src-mode-map "\C-c\C-x\C-l" 'org-edit-preview-latex-fragment)
+#+end_src
+
 Define custom =pub_book= and =pub_book_fmem= classes. These are used
 by the [[https://github.com/tammymakesthings/latex-nonfiction-ebook-template][latex-nonfiction-ebook-template]] template to create the right
 levels of hierarchy in book projects.
@@ -3515,6 +3528,7 @@ this project.
                  :select-tags ("endmatter")
                  :with-latex t :latex-class "pub_book_fmem" :body-only t) t)
 #+end_src
+
 ***** TaskJuggler Integration
 
 Set up org taskjuggler integrations.

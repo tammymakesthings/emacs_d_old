@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-20 14:58:27 tammy>
+#+DATE: Time-stamp: <2020-03-23 10:13:51 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -850,6 +850,37 @@ windows vertically unless they're small.
      split-height-threshold 4
      split-width-threshold 40
      split-window-preferred-function 'split-window-really-sensibly)
+#+end_src
+
+This code allows you to toggle the direction the window is split. From [[https://www.emacswiki.org/emacs/ToggleWindowSplit][here]].
+
+#+begin_src emacs-lisp
+  (defun toggle-window-split ()
+    (interactive)
+    (if (= (count-windows) 2)
+        (let* ((this-win-buffer (window-buffer))
+	       (next-win-buffer (window-buffer (next-window)))
+	       (this-win-edges (window-edges (selected-window)))
+	       (next-win-edges (window-edges (next-window)))
+  	       (this-win-2nd (not (and (<= (car this-win-edges)
+  					   (car next-win-edges))
+				       (<= (cadr this-win-edges)
+					   (cadr next-win-edges)))))
+  	       (splitter
+	        (if (= (car this-win-edges)
+		       (car (window-edges (next-window))))
+		    'split-window-horizontally
+		  'split-window-vertically)))
+	  (delete-other-windows)
+	  (let ((first-win (selected-window)))
+	    (funcall splitter)
+	    (if this-win-2nd (other-window 1))
+	    (set-window-buffer (selected-window) this-win-buffer)
+	    (set-window-buffer (next-window) next-win-buffer)
+	    (select-window first-win)
+	    (if this-win-2nd (other-window 1))))))
+
+  (define-key ctl-x-4-map "t" 'toggle-window-split)
 #+end_src
 
 ***** Configure mouse integration
@@ -2066,6 +2097,8 @@ Set general org-agenda options.
   (setq org-agenda-include-diary nil)
   (setq org-agenda-tags-todo-honor-ignore-options t)
   (setq org-agenda-todo-list-sublevels nil)
+
+  (add-hook 'org-agenda-mode-hook (lambda () (hl-line-mode 1)))
 #+end_src
 
 Set some options that speed up agenda processing.

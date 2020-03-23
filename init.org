@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-23 10:34:10 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-23 11:02:27 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -2120,6 +2120,17 @@ in your =~/.emacs.d/diary= file.
 %%(diary-sunrise)Sunrise in %s
 %%(diary-sunset)
 %%(org-lunar-phases)
+3/13/2018 Anniversary: Dave's passing
+4/23/2013 Anniversary: Started at Mindbody
+4/19/1945 Dad's birthday
+6/04/1959 Cynthia's birthday
+8/04/1977 Joanna's birthday
+10/21/1973 My birthday
+10/22/2017 Charlie's birthday
+11/03/1946 Mom's birthday
+12/29/1940 Irwin's birthday
+%%(diary-cyclic 14 16 8 2019) Payday
+&%%(diary-float 11 4 4) Thanksgiving
 #+end_export
 
 #+begin_src emacs-lisp
@@ -3059,6 +3070,7 @@ Define a skeleton for an Org file header.
     "#+STARTUP:  fnlocal fnaauto fnadjust \n"
     "#+TODO: TODO(t) DOING(d) WAITING(w@/!) DELEGATED(l@/!) | DONE(x!) CANCELED(c@/!) FORWARD(f)\n"
     "#+FILETAGS: :" (skeleton-read "File tags (colon-separated): ") ":\n"
+    "#+SETUPFILE: ./_themes/setup/theme-readtheorg-local.setup\n"
     )
 #+end_src
 
@@ -3077,6 +3089,7 @@ Define a skeleton for an Org project file.
         "#+TAGS: INITIATION(i) PLANNING(p) EXECUTION(e) MONITORING(m) CLOSURE(c)\n"
         "#+TAGS: MEETING(M) DEADLINE(D) DELIVERABLE(E) KPI(K) RESULT(R)\n"
         "#+FILETAGS: :PROJECT:\n"
+        "#+SETUPFILE: ./_themes/setup/theme-readtheorg-local.setup\n"
         "\n"
         "* Inbox\n"
         "* Project Planning\n"
@@ -3136,15 +3149,17 @@ Define a skeleton for a writing project.
     "#+STARTUP: content hideblocks hidestars align logdone logdeadline odd\n"
     "#+STARTUP: fnlocal fnaauto fnadjust \n"
     "#+FILETAGS: :WRITING:MANUSCRIPT:\n"
+    "#+SETUPFILE: ./_themes/setup/theme-readtheorg-local.setup\n"
     "\n"
     "* Characters                                                       :noexport:\n"
     "* Settings                                                         :noexport:\n"
     "* Research                                                         :noexport:\n"
     "* Journal                                                          :noexport:\n"
-    "* Dedication\n"
-    "* Acknowledgements\n"
-    "* Prologue\n"
-    "* Chapter 1\n"
+    "* Dedication                                                    :frontmatter:\n"
+    "* Acknowledgements                                              :frontmatter:\n"
+    "* Prologue                                                       :mainmatter:\n"
+    "* Chapter 1                                                      :mainmatter:\n"
+    "* Endmatter                                                       :endmatter:\n"
     "* Unfiled Scenes                                                   :noexport:\n")
 #+end_src
 

@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-23 11:33:15 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-26 12:25:34 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -429,6 +429,69 @@ Install some packages from quelpa.
                         ("\C-x\C-b" . bufler-list)
                      ))
                
+  (use-package noflet
+               :quelpa (noflet 
+                        :fetcher github 
+                        :repo "nicferrier/emacs-noflet"))
+
+  ; Key bindings from https://ebzzry.io/en/emacs-pairs/
+  (use-package smartparens
+               :quelpa (smartparens
+                        :fetcher github
+                        :repo "Fuco1/smartparens")
+               :config (progn 
+                 (show-smartparens-global-mode t)
+                 (add-hook 'prog-mode-hook 
+                           'turn-on-smartparens-strict-mode)
+                 (add-hook 'markdown-mode-hook 
+                           'turn-on-smartparens-strict-mode)
+                 (bind-keys :map smartparens-mode-map
+                            ("C-M-a" . sp-beginning-of-sexp)
+                            ("C-M-e" . sp-end-of-sexp)
+                            
+                            ("C-<down>" . sp-down-sexp)
+                            ("C-<up>"   . sp-up-sexp)
+                            ("M-<down>" . sp-backward-down-sexp)
+                            ("M-<up>"   . sp-backward-up-sexp)
+                            
+                            ("C-M-f" . sp-forward-sexp)
+                            ("C-M-b" . sp-backward-sexp)
+                            
+                            ("C-M-n" . sp-next-sexp)
+                            ("C-M-p" . sp-previous-sexp)
+                            
+                            ("C-S-f" . sp-forward-symbol)
+                            ("C-S-b" . sp-backward-symbol)
+                            
+                            ("C-<right>" . sp-forward-slurp-sexp)
+                            ("M-<right>" . sp-forward-barf-sexp)
+                            ("C-<left>"  . sp-backward-slurp-sexp)
+                            ("M-<left>"  . sp-backward-barf-sexp)
+                            
+                            ("C-M-t" . sp-transpose-sexp)
+                            ("C-M-k" . sp-kill-sexp)
+                            ("C-k"   . sp-kill-hybrid-sexp)
+                            ("M-k"   . sp-backward-kill-sexp)
+                            ("C-M-w" . sp-copy-sexp)
+                            ("C-M-d" . delete-sexp)
+                            
+                            ("M-<backspace>" . backward-kill-word)
+                            ("C-<backspace>" . sp-backward-kill-word)
+                            ([remap sp-backward-kill-word] . backward-kill-word)
+                            
+                            ("M-[" . sp-backward-unwrap-sexp)
+                            ("M-]" . sp-unwrap-sexp)
+                            
+                            ("C-x C-t" . sp-transpose-hybrid-sexp)
+                            
+                            ("C-c ("  . wrap-with-parens)
+                            ("C-c ["  . wrap-with-brackets)
+                            ("C-c {"  . wrap-with-braces)
+                            ("C-c '"  . wrap-with-single-quotes)
+                            ("C-c \"" . wrap-with-double-quotes)
+                            ("C-c _"  . wrap-with-underscores)
+                            ("C-c `"  . wrap-with-back-quotes))
+               ))
 
   ; Upgrade packages at most every 7 days
   (setq quelpa-upgrade-interval 7)
@@ -1035,7 +1098,11 @@ automatically updated to the current time whenever the file is saved.
     (add-hook 'before-save-hook 'time-stamp))
 #+end_src
 
+***** Enable smartparens
 
+#+begin_src emacs-lisp
+  (require 'smartparens-config)
+#+end_src
 
 ***** Enable Hippie Expand
 
@@ -2163,7 +2230,7 @@ Set some options that speed up agenda processing.
 #+begin_src emacs-lisp
   (setq org-agenda-dim-blocked-tasks nil)
   (setq org-agenda-inhibit-startup t)
-  (setq org-agenda-use-tag-inheritance nil)
+  (setq org-agenda-use-tag-inheritance t)
   (setq org-agenda-ignore-drawer-properties '(effort appt category))
 #+end_src
 
@@ -2564,8 +2631,120 @@ Enable property inheritance.
 
 ***** Org Capture Settings
 
-Load [[https://github.com/progfolio/doct/][doct]], a helper library to declaratively set
-=org-capture-templates=.
+******* Create a new window for capture buffers
+
+From [[https://stackoverflow.com/questions/21195327/emacs-force-org-mode-capture-buffer-to-open-in-a-new-window][here]].
+
+Helper functions.
+
+#+begin_src emacs-lisp :tangle no
+  (defun aharris/get-frame-by-name (fname)
+    "If there is a frame with named FNAME, return it, else nil."
+    (require 'dash)                       ; For `-some'
+    (-some (lambda (frame)
+             (when (equal fname (frame-parameter frame 'name))
+               frame))
+           (frame-list)))
+
+  (defun aharris/display-buffer-in-named-frame (buffer alist)
+    "Display BUFFER in frame with specific name.
+  The name to use is the value associated with the 'named-frame key
+  in ALIST.  If a frame with that name already exists, use it.
+  Otherwise, call `display-buffer-in-pop-up-frame' to create it.
+
+  If ALIST does not contain the key 'named-frame, use the name of BUFFER."
+    (let* ((fname  (or (cdr (assq 'named-frame alist))
+                       (buffer-name buffer)))
+           (frame  (aharris/get-frame-by-name fname)))
+      (if frame
+          (window--display-buffer buffer
+                                  (frame-selected-window frame)
+                                  'reuse) 
+        (display-buffer-pop-up-frame
+         buffer
+         (push `(pop-up-frame-parameters (name . ,fname)) 'alist)
+;         (add-to-list 'alist `(pop-up-frame-parameters
+;                               (name . ,fname)))
+))))
+#+end_src
+
+Define a macro to install temporary advice.
+
+#+begin_src emacs-lisp :tangle no
+  (defmacro aharris/with-advice (adlist &rest body)
+    "Execute BODY with temporary advice in ADLIST.
+
+  Each element of ADLIST should be a list of the form
+    (SYMBOL WHERE FUNCTION [PROPS])
+  suitable for passing to `advice-add'.  The BODY is wrapped in an
+  `unwind-protect' form, so the advice will be removed even in the
+  event of an error or nonlocal exit."
+    (declare (debug ((&rest (&rest form)) body))
+             (indent 1))
+    `(progn
+       ,@(mapcar (lambda (adform)
+                   (cons 'advice-add adform))
+                 adlist)
+       (unwind-protect (progn ,@body)
+         ,@(mapcar (lambda (adform)
+                     `(advice-remove ,(car adform) ,(nth 2 adform)))
+                   adlist))))
+#+end_src
+
+Open =org-capture= in a popout frame.
+
+#+begin_src emacs-lisp :tangle no
+  (defun aharrus/org-capture-in-popout-frame (&optional goto keys)
+    "As `org-capture', but do all work in a new frame.
+
+      This function by itself doesn't clean up the frame following
+      capture.  To do that, add `aharris/org-capture-delete-capture-frame'
+      to `org-capture-after-finalize-hook'."
+    (interactive "P")
+    (if goto
+        (org-capture goto keys)
+      (let ((override  '("\\*Org Select\\*\\|\\*Capture\\*\\|CAPTURE-.*"
+                         aharris/display-buffer-in-named-frame
+                         (named-frame . "Capture"))))
+
+        ;; Force all relevant buffers to open in a specific capture frame.
+        (push override 'display-buffer-alist)
+;        (add-to-list 'display-buffer-alist override)
+        (aharris/with-advice 
+            (;; Make Org-mode respect `display-buffer-alist'.
+             (#'org-switch-to-buffer-other-window :override #'pop-to-buffer)
+             ;; And stop Org-mode from messing with our window configuration.
+             (#'delete-other-windows :override #'ignore))
+          (unwind-protect (condition-case err
+                              (org-capture goto keys)
+                            (error (aharris/org-capture-delete-capture-frame)
+                                   (signal (car err) (cdr err))))
+            (setq display-buffer-alist
+                  (delete override display-buffer-alist)))))))
+#+end_src
+
+Get rid of the popout frame when it's complete.
+
+#+begin_src emacs-lisp :tangle no
+  (defun aharris/org-capture-delete-capture-frame ()
+    "Delete a frame named \"Capture\".
+  For use in `org-capture-after-finalize-hook' to clean up after
+  `aharris/org-capture-in-popout-frame'."
+    (let ((frame  (aharris/get-frame-by-name "Capture")))
+      (when frame (delete-frame frame))))
+#+end_src
+
+Enable the popouts.
+
+#+begin_src emacs-lisp :tangle no
+  (global-set-key "\C-cc" 'aharris/org-capture-in-popout-frame)
+  (add-hook 'org-capture-after-finalize-hook
+            #'aharris/org-capture-delete-capture-frame)
+#+end_src
+
+******* Capture Templates 
+
+Load [[https://github.com/progfolio/doct/][doct]], a helper library to declaratively set =org-capture-templates=.
 
 #+begin_src emacs-lisp
   (require 'doct)
@@ -2623,28 +2802,10 @@ And now we can define the =org-capture-templates= used by
 #+begin_src emacs-lisp
   (setq org-capture-templates
         (doct '(
-
-                ("Today Entry"
-                 :keys "z"
-                 :file "master.org" :olp ("Journal")
-                 :type entry :datetree t :tree-type week :prepend t
-                 :template
-                 (
-                  "********* Capacity Manager                              :CAPACITYMGR:"
-                  "*********** TODO Draft SOWs [/]"
-                  "*********** TODO Upload SOWs to SpringCM [/]"
-                  "*********** TODO Send SOWs for signature [/]"
-                  "********* EOS - PSA Track                                       :EOS:"
-                  "********* Tasks - Work                                        :TASKS:"
-                  "*********** TODO %(tlc/org-today-entry-daily-tasks)"
-                  "********* Tasks - Personal                                    :TASKS:"
-                  )
-                 )
-
                 ("Tasks"
                  :keys "t"
-                 :file "master.org" :olp ("Journal")
-                 :type entry :datetree t :tree-type week :prepend t
+                 :file "master.org" :olp ("Capacity Manager")
+                 :type entry :prepend t
                  :children (
                             ("Respond"
                              :keys "r"
@@ -2661,7 +2822,6 @@ And now we can define the =org-capture-templates= used by
                             ("Call"
                              :keys "c"
                              :template "* Phone Call with %?\n%U")
-                            )
                             ("Note"
                              :keys "n"
                              :type entry :olp ("Journal")
@@ -2680,12 +2840,11 @@ And now we can define the =org-capture-templates= used by
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template  "* %? :JOURNAL:\n%U\n"
                            )
-                 )
+                 ))
 
                 ("Tasks (EOS)"
                  :keys "T"
-                 :file "proj_eos.org" :type entry :olp ("Journal")
-                 :datetree t :time-prompt t :tree-type week :prepend t
+                 :file "master.org" :type entry :olp ("EOS Profesional Services")
                  :children (
                             ("Respond"
                              :keys "r"
@@ -2702,26 +2861,25 @@ And now we can define the =org-capture-templates= used by
                             ("Call"
                              :keys "c"
                              :template "* Phone Call with %?\n%U")
-                            )
-          ("Note"
+                            ("Note"
                              :keys "n"
-                             :type entry :olp ("Journal")
+                             :type entry :olp ("Journal") :file "proj_eos.org"
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template "* %? :NOTE:\n%U\n"
                             )
                             ("Journal"
                              :keys "j"
-                             :type entry  :olp ("Journal") 
+                             :type entry  :olp ("Journal") :file "proj_eos.org"
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template  "* %? :JOURNAL:\n%U\n"
                            )
                            ("Idea"
                              :keys "i"
-                             :type entry  :olp ("Journal") 
+                             :type entry  :olp ("Journal") :file "proj_eos.org"
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template  "* %? :JOURNAL:\n%U\n"
                            )
-                 )
+                 ))
 
                 ("Writing Journal" :type entry
                  :keys "w" :time-prompt t :tree-type week :prepend t :olp ("Journal")
@@ -2791,12 +2949,16 @@ And now we can define the =org-capture-templates= used by
               ))
 #+end_src
 
+******* Align tags after capturing
+
 Automatically re-align tags after capturing.
 
 #+begin_src emacs-lisp
   (add-hook 'org-capture-mode-hook '(lambda nil (org-align-tags t)))
   (add-hook 'org-after-tags-change-hook '(lambda nil (org-align-tags t)))
 #+end_src
+
+******* org-protocol-capture-html
 
 Load up [[https://github.com/alphapapa/org-protocol-capture-html][org-protocol-capture-html]], which can capture a whole Web page to
 org-mode. Requires the [[https://github.com/magnars/s.el][s.el]] library and [[https://pandoc.org/][pandoc]].
@@ -3319,6 +3481,7 @@ This came from [[https://www.emacswiki.org/emacs/SkeletonMode][here]].
 #+end_src
 
 ***** Project Functions
+
 From https://karl-voit.at/2019/11/03/org-projects/.
 
 #+begin_src emacs-lisp
@@ -3656,6 +3819,46 @@ this project.
                  :publishing-function tlc/org-publish-azmystery1-em
                  :select-tags ("endmatter")
                  :with-latex t :latex-class "pub_book_fmem" :body-only t) t)
+#+end_src
+
+******* Tammy Makes Things Blog Publish Settings
+
+#+begin_src emacs-lisp
+  (add-to-list 'org-publish-project-alist
+               '("tammymakesthings"
+                   :components 
+                    (
+                       "tammymakesthings_posts" 
+                       "tammymakesthings_projects"
+                    )
+                  ) 
+                  t)
+  (add-to-list 'org-publish-project-alist
+               '("tammymakesthings_posts"
+                   :base-directory "~/tammymakesthings.github.io/org/posts"
+                   :base-extension "org"
+                   :publishing-directory "~/tammymakesthings.github.io/_posts"
+                   :recursive t
+                   :publishing-function org-html-publish-to-html
+                   :section-numbers nil
+                   :headline-levels 4
+                   :html-extension "html"
+                   :body-only t
+                   )
+                 t)
+  (add-to-list 'org-publish-project-alist
+               '("tammymakesthings_projects"
+                   :base-directory "~/tammymakesthings.github.io/org/projects"
+                   :base-extension "org"
+                   :publishing-directory "~/tammymakesthings.github.io/_projects"
+                   :recursive t
+                   :publishing-function org-html-publish-to-html
+                   :section-numbers nil
+                   :headline-levels 4
+                   :html-extension "html"
+                   :body-only t
+                  )
+                t)
 #+end_src
 
 ***** TaskJuggler Integration

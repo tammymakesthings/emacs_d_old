@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-26 12:25:34 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-30 11:34:32 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -152,7 +152,7 @@ it. However, I do make the following assumptions:
 
 *** Index
 :PROPERTIES:
-:STARTUP:  folded
+:VISIBILITY:  folded
 :END:
 ***** [[*Preliminaries][Preliminaries]]
 ***** [[*Package Installation][Package Installation]]
@@ -1829,6 +1829,7 @@ Set a few miscellaneous settings.
   (setq org-catch-invisible-edits 'smart)
 
   (setq org-cycle-include-plain-lists t)
+  (setq org-cycle-max-level 3)
   (setq org-alphabetical-lists t)
   (setq org-blank-before-new-entry '((heading . auto) (plain-list-item . nil)))
 #+end_src
@@ -1972,7 +1973,7 @@ selected subtree.
   (defun tlc/org-add-folded-property nil
     "Add the STARTUP folded property to the subtree at point."
     (interactive)
-    (org-set-property "STARTUP" "folded"))
+    (org-set-property "VISIBILITY" "folded"))
 #+end_src
 
 ******* Count Words in an Org file
@@ -2161,51 +2162,7 @@ Set the archiving location and options.
 
 #+begin_src emacs-lisp
   (setq org-archive-location "%s_archive::datetree/* Archive")
-  (setq org-archive-mark-done nil)
-#+end_src
-
-Enable archiving of a subtree to provide context from the original
-file, rather than flattening. See [[https://gist.github.com/osamu2001/370843]].
-
-#+begin_src emacs-lisp
-  (defadvice org-archive-subtree (around fix-hierarchy activate)
-    (let* ((fix-archive-p (and (not current-prefix-arg)
-                               (not (use-region-p))))
-           (afile (org-extract-archive-file (org-get-local-archive-location)))
-           (buffer (or (find-buffer-visiting afile) (find-file-noselect afile))))
-      ad-do-it
-      (when fix-archive-p
-        (with-current-buffer buffer
-          (goto-char (point-max))
-          (while (org-up-heading-safe))
-          (let* ((olpath (org-entry-get (point) "ARCHIVE_OLPATH"))
-                 (path (and olpath (split-string olpath "/")))
-                 (level 1)
-                 tree-text)
-            (when olpath
-              (org-mark-subtree)
-              (setq tree-text (buffer-substring (region-beginning) (region-end)))
-              (let (this-command) (org-cut-subtree))
-              (goto-char (point-min))
-              (save-restriction
-                (widen)
-                (-each path
-                  (lambda (heading)
-                    (if (re-search-forward
-                         (rx-to-string
-                          `(: bol (repeat ,level "*") (1+ " ") ,heading)) nil t)
-                        (org-narrow-to-subtree)
-                      (goto-char (point-max))
-                      (unless (looking-at "^")
-                        (insert "\n"))
-                      (insert (make-string level ?*)
-                              " "
-                              heading
-                              "\n"))
-                    (cl-incf level)))
-                (widen)
-                (org-end-of-subtree t t)
-                (org-paste-subtree level tree-text))))))))
+  (setq org-archive-mark-done t)
 #+end_src
 
 ***** Org Agenda Settings
@@ -2576,7 +2533,8 @@ Define the default set of TODO states.
 #+begin_src emacs-lisp
   (setq org-todo-keywords
         '(
-          (sequence "TODO(t)" "DOING(d!)" "WAITING(w@/!)" "|" "DONE(x)" "CANCELED (c@)")
+           (sequence "TODO(t)" "NEXT(n)" "DOING(d)" "WAITING(w@/!)" "DELEGATED(l@/!)" "|" "DONE(x!)" "CANCELED(c@/!)" "FORWARD(f)")
+           (sequence "DRAFTING(1)" "REVIEW(2)" "PENDING(3@/!)" "UPLOADED(4)" "|" "SENT(5)")
           ))
 #+end_src
 
@@ -2585,18 +2543,48 @@ Define font faces for todo keyword states.
 #+begin_src emacs-lisp
   (setq org-todo-keyword-faces
         (quote (
+                ;; Colors for the standard TODOs sequence
                 ("TODO"       :foreground "red" 
+                              :background "#1E1C31"
+                              :weight bold :slant normal  :underline nil :overline nil)
+                ("NEXT"       :foreground "cyan" 
+                              :background "#1E1C31"
                               :weight bold :slant normal  :underline nil :overline nil)
                 ("DOING"      :foreground "forest green" 
+                              :background "#1E1C31"
                               :weight bold :slant normal  :underline t   :overline nil)
                 ("WAITING"    :foreground "orange" 
+                              :background "#1E1C31"
+                              :weight bold :slant oblique :underline nil :overline nil)
+                ("DELEGATED"  :foreground "orange" 
+                              :background "#1E1C31"
                               :weight bold :slant oblique :underline nil :overline nil)
                 ("DONE"       :foreground "dark slate gray" 
+                              :background "#1E1C31"
                               :weight bold :slant normal  :underline nil :overline nil)
                 ("CANCELED"   :foreground "forest green" 
+                              :background "#1E1C31"
                               :weight bold :slant normal  :underline nil :overline nil)
                 ("FORWARD"    :foreground "dim gray" 
+                              :background "#1E1C31"
                               :weight bold :slant normal  :underline nil :overline nil) 
+
+                ;; Colors for the SOW workflow TODOs seqence
+                ("DRAFTING"   :foreground "turquoise2" 
+                              :background "#1E1C31"
+                              :weight bold :slant oblique :underline nil :overline nil)
+                ("REVIEW"     :foreground "DarkGoldenrod2" 
+                              :background "#1E1C31"
+                              :weight bold :slant oblique :underline nil :overline nil)
+                ("PENDING"    :foreground "orange" 
+                              :background "#1E1C31"
+                              :weight bold :slant oblique :underline nil :overline nil)
+                ("UPLOADED"   :foreground "IndianRed1" 
+                              :background "#1E1C31"
+                              :weight bold :slant oblique :underline nil :overline nil)
+                ("SENT"       :foreground "dark slate gray" 
+                              :background "#1E1C31"
+                              :weight bold :slant normal  :underline nil :overline nil)
                 )))
 #+end_src
 
@@ -2796,10 +2784,17 @@ define helpers for accessing entries in this list.
                             ))
 #+end_src
 
-And now we can define the =org-capture-templates= used by
-=org-capture=. There are lots of them.
+Define our templates for =org-capture=. There are lots of them.
 
 #+begin_src emacs-lisp
+  (defun tlc/maybe-wrap-quotes (content &optional wrap-type)
+    "Wrap quoted text if provided."
+    (if content
+       (concat "#+begin_" (downcase (or wrap-type "quote")) "\n"
+        content "\n"
+        "#+end_" (downcase (or wrap-type "quote"))))
+      "")
+
   (setq org-capture-templates
         (doct '(
                 ("Tasks"
@@ -2920,9 +2915,7 @@ And now we can define the =org-capture-templates= used by
                  :template ("* [[%:link][%:description]]"
                             ""
                             "Captured at: %U"
-                            "#+BEGIN_QUOTE"
-                            "%i"
-                            "#+END_QUOTE"
+                            "%(tlc/maybe-wrap-quotes \"%i\")"
                             ))
 
                 ("Protocol Link" :keys "L" :file "codex.org"
@@ -2948,6 +2941,10 @@ And now we can define the =org-capture-templates= used by
                 )
               ))
 #+end_src
+
+#+RESULTS:
+| t  | Tasks   |       |                                        |                                       |
+| tr | Respond | entry | (file+olp master.org Capacity Manager) | * NEXT Respond to %:from on %:subject |
 
 ******* Align tags after capturing
 

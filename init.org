@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-31 10:47:42 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-31 11:01:36 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1980,8 +1980,16 @@ From [[https://orgmode.org/worg/org-hacks.html][here]].
 Set the archiving location and options.
 
 #+begin_src emacs-lisp
-  (setq org-archive-location "%s_archive::datetree/* Archive")
+  (setq org-archive-location 
+    (concat 
+       org-directory
+       "/archive/%s_archive_"  
+       (prin1-to-string (nth 5 (parse-time-string (current-time-string))))
+       "::datetree/* Archive"
+    ))
+
   (setq org-archive-mark-done t)
+  (setq org-archive-reversed-order t)
 #+end_src
 
 This bunch of code archives subtree hierarchies. From [[https://gist.github.com/kepi/2f4acc3cc93403c75fbba5684c5d852d][here]].
@@ -2115,7 +2123,7 @@ belongs as a list."
 
 And here's how we use it.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (when (file-exists-p "org-archive-subtree-hierarchical.el")
     (progn
       (require 'org-archive-subtree-hierarchical)

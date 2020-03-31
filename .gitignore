@@ -22,3 +22,4 @@ init.el.firstrun
 settings-*.el
 diary
 ob-text.el
+org-archive-subtree-hierarchical.el

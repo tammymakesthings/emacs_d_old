@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-30 11:34:32 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-31 10:32:25 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -396,6 +396,16 @@ Install some packages from quelpa.
 
   (require 'quelpa-use-package)
 
+  ; Upgrade packages at most every 7 days
+  (setq quelpa-upgrade-interval 7)
+  (setq auto-package-update-interval 7)
+  (setq auto-package-update-prompt-before-update nil)
+  (setq auto-package-update-delete-old-versions t)
+  (setq auto-package-update-hide-results t)
+
+  (add-hook #'after-init-hook #'quelpa-upgrade-all-maybe)
+  (add-hook #'after-init-hook #'auto-package-update-maybe)
+
   (use-package bind-key
                :ensure t
                :config (add-to-list 'same-window-buffer-names "*Personal Keybindings*"))
@@ -492,16 +502,6 @@ Install some packages from quelpa.
                             ("C-c _"  . wrap-with-underscores)
                             ("C-c `"  . wrap-with-back-quotes))
                ))
-
-  ; Upgrade packages at most every 7 days
-  (setq quelpa-upgrade-interval 7)
-  (setq auto-package-update-interval 7)
-  (setq auto-package-update-prompt-before-update nil)
-  (setq auto-package-update-delete-old-versions t)
-  (setq auto-package-update-hide-results t)
-
-  (add-hook #'after-init-hook #'quelpa-upgrade-all-maybe)
-  (add-hook #'after-init-hook #'auto-package-update-maybe)
 #+end_src
 
 *** Shell Integration
@@ -2165,6 +2165,144 @@ Set the archiving location and options.
   (setq org-archive-mark-done t)
 #+end_src
 
+This bunch of code archives subtree hierarchies. From [[https://gist.github.com/kepi/2f4acc3cc93403c75fbba5684c5d852d][here]].
+
+#+begin_src emacs-lisp :tangle org-archive-subtree-hierarchical.el
+;; org-archive-subtree-hierarchical.el
+;;
+;; version 0.2
+;; modified from https://lists.gnu.org/archive/html/emacs-orgmode/2014-08/msg00109.html
+;; modified from https://stackoverflow.com/a/35475878/259187
+
+;; In orgmode
+;; * A
+;; ** AA
+;; *** AAA
+;; ** AB
+;; *** ABA
+;; Archiving AA will remove the subtree from the original file and create
+;; it like that in archive target:
+
+;; * AA
+;; ** AAA
+
+;; And this give you
+;; * A
+;; ** AA
+;; *** AAA
+;;
+;; Install file to your include path and include in your init file with:
+;;
+;;  (require 'org-archive-subtree-hierarchical)
+;;  (setq org-archive-default-command 'org-archive-subtree-hierarchical)
+;;
+(provide 'org-archive-subtree-hierarchical)
+(require 'org-archive)
+
+(defun org-archive-subtree-hierarchical--line-content-as-string ()
+  "Returns the content of the current line as a string"
+  (save-excursion
+    (beginning-of-line)
+    (buffer-substring-no-properties
+     (line-beginning-position) (line-end-position))))
+
+(defun org-archive-subtree-hierarchical--org-child-list ()
+  "This function returns all children of a heading as a list. "
+  (interactive)
+  (save-excursion
+    ;; this only works with org-version > 8.0, since in previous
+    ;; org-mode versions the function (org-outline-level) returns
+    ;; gargabe when the point is not on a heading.
+    (if (= (org-outline-level) 0)
+        (outline-next-visible-heading 1)
+      (org-goto-first-child))
+    (let ((child-list (list (org-archive-subtree-hierarchical--line-content-as-string))))
+      (while (org-goto-sibling)
+        (setq child-list (cons (org-archive-subtree-hierarchical--line-content-as-string) child-list)))
+      child-list)))
+
+(defun org-archive-subtree-hierarchical--org-struct-subtree ()
+  "This function returns the tree structure in which a subtree
+belongs as a list."
+  (interactive)
+  (let ((archive-tree nil))
+    (save-excursion
+      (while (org-up-heading-safe)
+        (let ((heading
+               (buffer-substring-no-properties
+                (line-beginning-position) (line-end-position))))
+          (if (eq archive-tree nil)
+              (setq archive-tree (list heading))
+            (setq archive-tree (cons heading archive-tree))))))
+    archive-tree))
+
+(defun org-archive-subtree-hierarchical ()
+  "This function archives a subtree hierarchical"
+  (interactive)
+  (let ((org-tree (org-archive-subtree-hierarchical--org-struct-subtree))
+        (this-buffer (current-buffer))
+        (file (abbreviate-file-name
+               (or (buffer-file-name (buffer-base-buffer))
+                   (error "No file associated to buffer")))))
+    (save-excursion
+      (setq location org-archive-location
+            afile (car (org-archive--compute-location
+		                   (or (org-entry-get nil "ARCHIVE" 'inherit) location)))
+            ;; heading (org-extract-archive-heading location)
+            infile-p (equal file (abbreviate-file-name (or afile ""))))
+      (unless afile
+        (error "Invalid `org-archive-location'"))
+      (if (> (length afile) 0)
+          (setq newfile-p (not (file-exists-p afile))
+                visiting (find-buffer-visiting afile)
+                buffer (or visiting (find-file-noselect afile)))
+        (setq buffer (current-buffer)))
+      (unless buffer
+        (error "Cannot access file \"%s\"" afile))
+      (org-cut-subtree)
+      (set-buffer buffer)
+      (org-mode)
+      (goto-char (point-min))
+      (while (not (equal org-tree nil))
+        (let ((child-list (org-archive-subtree-hierarchical--org-child-list)))
+          (if (member (car org-tree) child-list)
+              (progn
+                (search-forward (car org-tree) nil t)
+                (setq org-tree (cdr org-tree)))
+            (progn
+              (goto-char (point-max))
+              (newline)
+              (org-insert-struct org-tree)
+              (setq org-tree nil)))))
+      (newline)
+      (org-yank)
+      (when (not (eq this-buffer buffer))
+        (save-buffer))
+      (message "Subtree archived %s"
+               (concat "in file: " (abbreviate-file-name afile))))))
+
+(defun org-insert-struct (struct)
+  "TODO"
+  (interactive)
+  (when struct
+    (insert (car struct))
+    (newline)
+    (org-insert-struct (cdr struct))))
+
+(defun org-archive-subtree ()
+  (org-archive-subtree-hierarchical)
+  )
+#+end_src
+
+And here's how we use it.
+
+#+begin_src emacs-lisp
+  (when (file-exists-p "org-archive-subtree-hierarchical.el")
+    (progn
+      (require 'org-archive-subtree-hierarchical)
+      (setq org-archive-default-command 'org-archive-subtree-hierarchical)))
+#+end_src
+
 ***** Org Agenda Settings
 
 Set general org-agenda options.
@@ -2172,7 +2310,9 @@ Set general org-agenda options.
 #+begin_src emacs-lisp
   (setq org-deadline-warning-days 3)
   (setq org-agenda-skip-additional-timestamps-same-entry t)
+  (setq org-agenda-skip-scheduled-if-deadline-is-shown 'repeated-after-deadline)
   (setq org-agenda-skip-scheduled-if-done t)
+  (setq org-agenda-skip-archived-trees t)1 
   (setq org-agenda-skip-deadline-if-done t)
   (setq org-agenda-include-all-todo t)
   (setq org-agenda-include-diary t)
@@ -2807,17 +2947,27 @@ Define our templates for =org-capture=. There are lots of them.
                              :template "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n")
                             ("Meeting with %?"
                              :keys "m"
+                             :file "journal.org"
+                             :type entry  :olp ("Journal") 
+                             :datetree t :time-prompt t :tree-type week :prepend t
                              :template "* Meeting with %? :MEETING:\n%U")
                             ("Meeting: %?"
                              :keys "M"
+                             :file "journal.org"
+                             :type entry  :olp ("Journal") 
+                             :datetree t :time-prompt t :tree-type week :prepend t
                              :template "* %<%Y-%m-%d> - %? :MEETING:\n%U")
                             ("Task"
                              :keys "t"
                              :template "* TODO %?\n%U\n")
                             ("Call"
                              :keys "c"
+                             :file "journal.org"
+                             :type entry  :olp ("Journal") 
+                             :datetree t :time-prompt t :tree-type week :prepend t
                              :template "* Phone Call with %?\n%U")
                             ("Note"
+                             :file "journal.org"
                              :keys "n"
                              :type entry :olp ("Journal")
                              :datetree t :time-prompt t :tree-type week :prepend t
@@ -2825,12 +2975,14 @@ Define our templates for =org-capture=. There are lots of them.
                             )
                             ("Journal"
                              :keys "j"
+                             :file "journal.org"
                              :type entry  :olp ("Journal") 
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template  "* %? :JOURNAL:\n%U\n"
                            )
                            ("Idea"
                              :keys "i"
+                             :file "journal.org"
                              :type entry  :olp ("Journal") 
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template  "* %? :JOURNAL:\n%U\n"
@@ -2846,15 +2998,21 @@ Define our templates for =org-capture=. There are lots of them.
                              :template "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n")
                             ("Meeting with %?"
                              :keys "m"
+                             :type entry  :olp ("Journal") :file "proj_eos.org"
+                             :datetree t :time-prompt t :tree-type week :prepend t
                              :template "* MEETING with %? :MEETING:\n%U")
                             ("Meeting: %?"
                              :keys "M"
+                             :type entry  :olp ("Journal") :file "proj_eos.org"
+                             :datetree t :time-prompt t :tree-type week :prepend t
                              :template "* %<%Y-%m-%d> - %? :MEETING:\n%U")
                             ("Task"
                              :keys "t"
                              :template "* TODO %?\n%U\n")
                             ("Call"
                              :keys "c"
+                             :type entry  :olp ("Journal") :file "proj_eos.org"
+                             :datetree t :time-prompt t :tree-type week :prepend t
                              :template "* Phone Call with %?\n%U")
                             ("Note"
                              :keys "n"
@@ -2888,7 +3046,7 @@ Define our templates for =org-capture=. There are lots of them.
 
                 ("One-on-One Meeting"
                  :keys "o"
-                 :file "master.org" :type entry :olp ("Journal")
+                 :file "journal.org" :type entry :olp ("Journal")
                  :datetree t :tree-type week :prepend t :time-prompt t
                  :template (
                             "* One on One - %^{PROMPT} :ONEONONE:"
@@ -2915,7 +3073,11 @@ Define our templates for =org-capture=. There are lots of them.
                  :template ("* [[%:link][%:description]]"
                             ""
                             "Captured at: %U"
-                            "%(tlc/maybe-wrap-quotes \"%i\")"
+                            ""
+                            "#+begin_quote"
+                            "%i"
+                            "#+end_quote"
+                            ;"%(tlc/maybe-wrap-quotes \"%i\")"
                             ))
 
                 ("Protocol Link" :keys "L" :file "codex.org"
@@ -2941,10 +3103,6 @@ Define our templates for =org-capture=. There are lots of them.
                 )
               ))
 #+end_src
-
-#+RESULTS:
-| t  | Tasks   |       |                                        |                                       |
-| tr | Respond | entry | (file+olp master.org Capacity Manager) | * NEXT Respond to %:from on %:subject |
 
 ******* Align tags after capturing
 
@@ -3024,7 +3182,7 @@ Settings for the =org-refile= functions.
 Decide where the org journal file lives.
 
 #+begin_src emacs-lisp
-  (defvar org-journal-file (concat org-directory "/master.org") "Path to OrgMode journal file.")
+  (defvar org-journal-file (concat org-directory "/journal.org") "Path to OrgMode journal file.")
 #+end_src
 
 Set the date format for journal entries.
@@ -3090,13 +3248,13 @@ Define structure templates.
 #+begin_src emacs-lisp
   (require 'org-tempo)
 
-(setq org-structure-template-alist '(
-  ("c" . "center")
-  ("C" . "comment")
-  ("e" . "example")
-  ("E" . "export")
-  ("s" . "src")
-  ("v" . "verse")))
+  (setq org-structure-template-alist '(
+    ("c" . "center")
+    ("C" . "comment")
+    ("e" . "example")
+    ("E" . "export")
+    ("s" . "src")
+    ("v" . "verse")))
 #+end_src
 
 Define emphasis pairs.

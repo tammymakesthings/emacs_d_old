@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-31 10:35:18 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-31 10:47:42 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -227,12 +227,6 @@ get too much farther.
       (cd (getenv "HOME")))
 #+end_src
 
-Set some variables to identify who I am.
-
-#+begin_src emacs-lisp
-  (setq user-full-name "Tammy Cravit")
-  (setq user-mail-address "tammymakesthings@gmail.com")
-#+end_src
 *** Package Installation
 
 #+begin_src emacs-lisp :tangle yes
@@ -242,20 +236,13 @@ Set some variables to identify who I am.
 
 #+end_src
 
-On Windows systems, I've had problems with TLS errors, so disable TLS
-transport on Windows systems.
-
-#+begin_src emacs-lisp
-  (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
-#+end_src
-
 Set TLS settings for installations.
 
 #+begin_src emacs-lisp
   (with-eval-after-load 'gnutls
     (setq gnutls-verify-error nil)
     (setq gnutls-min-prime-bits 1024)
-    (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.2")
+    (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
     (add-to-list 'gnutls-trustfiles "/usr/local/etc/libressl/cert.pem"))
 #+end_src
 
@@ -411,11 +398,12 @@ Install some packages from quelpa.
                :config (add-to-list 'same-window-buffer-names "*Personal Keybindings*"))
 
   ; Load org-plus-contrib from the orgmode.org elpa repository
-  (use-package org        :ensure org-plus-contrib)
-  (use-package doct       :ensure t :commands (doct))
-  (use-package ts         :ensure t)
-  (use-package s          :ensure t)
+  (use-package org                 :ensure org-plus-contrib)
+  (use-package doct                :ensure t :commands (doct))
+  (use-package ts                  :ensure t)
+  (use-package s                   :ensure t)
   (use-package auto-package-update :ensure t)
+
   (use-package org-super-agenda
                :quelpa (org-super-agenda 
                         :fetcher github 
@@ -443,64 +431,68 @@ Install some packages from quelpa.
                :quelpa (noflet 
                         :fetcher github 
                         :repo "nicferrier/emacs-noflet"))
+#+end_src
 
-  ; Key bindings from https://ebzzry.io/en/emacs-pairs/
+Load the [[https://github.com/Fuco1/smartparens][smartparens]] package and set up a bunch of hooks and key
+bindings. This configuration comes from [[https://ebzzry.io/en/emacs-pairs/][here]].
+
+#+begin_src emacs-lisp
+
   (use-package smartparens
                :quelpa (smartparens
                         :fetcher github
                         :repo "Fuco1/smartparens")
                :config (progn 
-                 (show-smartparens-global-mode t)
-                 (add-hook 'prog-mode-hook 
-                           'turn-on-smartparens-strict-mode)
-                 (add-hook 'markdown-mode-hook 
-                           'turn-on-smartparens-strict-mode)
-                 (bind-keys :map smartparens-mode-map
-                            ("C-M-a" . sp-beginning-of-sexp)
-                            ("C-M-e" . sp-end-of-sexp)
+                         (show-smartparens-global-mode t)
+                         (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
+                         (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode)
+
+                         (bind-keys :map smartparens-mode-map
+                           ("C-M-a" . sp-beginning-of-sexp)
+                           ("C-M-e" . sp-end-of-sexp)
                             
-                            ("C-<down>" . sp-down-sexp)
-                            ("C-<up>"   . sp-up-sexp)
-                            ("M-<down>" . sp-backward-down-sexp)
-                            ("M-<up>"   . sp-backward-up-sexp)
+                           ("C-<down>" . sp-down-sexp)
+                           ("C-<up>"   . sp-up-sexp)
+                           ("M-<down>" . sp-backward-down-sexp)
+                           ("M-<up>"   . sp-backward-up-sexp)
                             
-                            ("C-M-f" . sp-forward-sexp)
-                            ("C-M-b" . sp-backward-sexp)
+                           ("C-M-f" . sp-forward-sexp)
+                           ("C-M-b" . sp-backward-sexp)
+                           
+                           ("C-M-n" . sp-next-sexp)
+                           ("C-M-p" . sp-previous-sexp)
+                           
+                           ("C-S-f" . sp-forward-symbol)
+                           ("C-S-b" . sp-backward-symbol)
+                           
+                           ("C-<right>" . sp-forward-slurp-sexp)
+                           ("M-<right>" . sp-forward-barf-sexp)
+                           ("C-<left>"  . sp-backward-slurp-sexp)
+                           ("M-<left>"  . sp-backward-barf-sexp)
+                           
+                           ("C-M-t" . sp-transpose-sexp)
+                           ("C-M-k" . sp-kill-sexp)
+                           ("C-k"   . sp-kill-hybrid-sexp)
+                           ("M-k"   . sp-backward-kill-sexp)
+                           ("C-M-w" . sp-copy-sexp)
+                           ("C-M-d" . delete-sexp)
+                           
+                           ("M-<backspace>" . backward-kill-word)
+                           ("C-<backspace>" . sp-backward-kill-word)
+                           ([remap sp-backward-kill-word] . backward-kill-word)
+                           
+                           ("M-[" . sp-backward-unwrap-sexp)
+                           ("M-]" . sp-unwrap-sexp)
+                           
+                           ("C-x C-t" . sp-transpose-hybrid-sexp)
                             
-                            ("C-M-n" . sp-next-sexp)
-                            ("C-M-p" . sp-previous-sexp)
-                            
-                            ("C-S-f" . sp-forward-symbol)
-                            ("C-S-b" . sp-backward-symbol)
-                            
-                            ("C-<right>" . sp-forward-slurp-sexp)
-                            ("M-<right>" . sp-forward-barf-sexp)
-                            ("C-<left>"  . sp-backward-slurp-sexp)
-                            ("M-<left>"  . sp-backward-barf-sexp)
-                            
-                            ("C-M-t" . sp-transpose-sexp)
-                            ("C-M-k" . sp-kill-sexp)
-                            ("C-k"   . sp-kill-hybrid-sexp)
-                            ("M-k"   . sp-backward-kill-sexp)
-                            ("C-M-w" . sp-copy-sexp)
-                            ("C-M-d" . delete-sexp)
-                            
-                            ("M-<backspace>" . backward-kill-word)
-                            ("C-<backspace>" . sp-backward-kill-word)
-                            ([remap sp-backward-kill-word] . backward-kill-word)
-                            
-                            ("M-[" . sp-backward-unwrap-sexp)
-                            ("M-]" . sp-unwrap-sexp)
-                            
-                            ("C-x C-t" . sp-transpose-hybrid-sexp)
-                            
-                            ("C-c ("  . wrap-with-parens)
-                            ("C-c ["  . wrap-with-brackets)
-                            ("C-c {"  . wrap-with-braces)
-                            ("C-c '"  . wrap-with-single-quotes)
-                            ("C-c \"" . wrap-with-double-quotes)
-                            ("C-c _"  . wrap-with-underscores)
-                            ("C-c `"  . wrap-with-back-quotes))
+                           ("C-c ("  . wrap-with-parens)
+                           ("C-c ["  . wrap-with-brackets)
+                           ("C-c {"  . wrap-with-braces)
+                           ("C-c '"  . wrap-with-single-quotes)
+                           ("C-c \"" . wrap-with-double-quotes)
+                           ("C-c _"  . wrap-with-underscores)
+                           ("C-c `"  . wrap-with-back-quotes))
                ))
 #+end_src
 

@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-31 11:01:36 tammy.cravit>
+#+DATE: Time-stamp: <2020-03-31 11:20:52 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -2757,10 +2757,16 @@ Define our templates for =org-capture=. There are lots of them.
   (defun tlc/maybe-wrap-quotes (content &optional wrap-type)
     "Wrap quoted text if provided."
     (if content
-       (concat "#+begin_" (downcase (or wrap-type "quote")) "\n"
-        content "\n"
-        "#+end_" (downcase (or wrap-type "quote"))))
-      "")
+      (if (= 0 (length (string-trim content)))
+          ""
+        (concat "#+begin_" 
+                (downcase (or wrap-type "quote")) 
+                "\n" 
+                content 
+                "\n"
+                "#+end_" 
+                (downcase (or wrap-type "quote")))
+        )))
 
   (setq org-capture-templates
         (doct '(
@@ -2901,10 +2907,10 @@ Define our templates for =org-capture=. There are lots of them.
                             ""
                             "Captured at: %U"
                             ""
-                            "#+begin_quote"
-                            "%i"
-                            "#+end_quote"
-                            ;"%(tlc/maybe-wrap-quotes \"%i\")"
+                            ;;"#+begin_quote"
+                            ;;"%i"
+                            ;;"#+end_quote"
+                            "%(tlc/maybe-wrap-quotes \"%i\")"
                             ))
 
                 ("Protocol Link" :keys "L" :file "codex.org"
@@ -2922,7 +2928,6 @@ Define our templates for =org-capture=. There are lots of them.
                             "  :STYLE: habit"
                             "  :REPEAT_TO_STATE: NEXT"
                             "  :LOGGING: DONE(!)"
-                            "  :ARCHIVE: %%s_archive::* Habits"
                             "  :END:"
                             "  %U"
                             )
@@ -4181,7 +4186,9 @@ etc). If these are present, the correct one is loaded.
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (setq user-mail-address "tammy.cravit@mindbodyonline.com")
-  (setq user-name "Tammy Cravit")
+  (setq user-full-name "Tammy Cravit")
+  (setq user-domain "mindbodyonline.com")
+  (setq user-organisation "Mindbody, Inc.")
 
   (provide 'settings-system-sl-wl-0010104)
 #+end_src
@@ -4210,7 +4217,9 @@ etc). If these are present, the correct one is loaded.
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (setq user-mail-address "tammymakesthings@gmail.com")
-  (setq user-name "Tammy Cravit")
+  (setq user-full-name "Tammy Cravit")
+  (setq user-domain "tammymakesthings.com")
+  (setq user-organisation "Tammy Makes Things")
 
   (provide 'settings-system-tmtlab)
 #+end_src

@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-03-31 11:20:52 tammy.cravit>
+#+DATE: Time-stamp: <2020-04-01 08:11:20 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -2138,6 +2138,7 @@ Set general org-agenda options.
   (setq org-deadline-warning-days 3)
   (setq org-agenda-skip-additional-timestamps-same-entry t)
   (setq org-agenda-skip-scheduled-if-deadline-is-shown 'repeated-after-deadline)
+  (setq org-todo-repeat-to-state "TODO")
   (setq org-agenda-skip-scheduled-if-done t)
   (setq org-agenda-skip-archived-trees t)1 
   (setq org-agenda-skip-deadline-if-done t)
@@ -2754,20 +2755,21 @@ define helpers for accessing entries in this list.
 Define our templates for =org-capture=. There are lots of them.
 
 #+begin_src emacs-lisp
-  (defun tlc/maybe-wrap-quotes (content &optional wrap-type)
-    "Wrap quoted text if provided."
-    (if content
-      (if (= 0 (length (string-trim content)))
-          ""
-        (concat "#+begin_" 
-                (downcase (or wrap-type "quote")) 
-                "\n" 
-                content 
-                "\n"
-                "#+end_" 
-                (downcase (or wrap-type "quote")))
-        )))
+  (use-package org-chef :ensure t)
 
+  ;; (defun tlc/maybe-wrap-quotes (content &optional wrap-type)
+  ;;   "Wrap quoted text if provided."
+  ;;   (if content
+  ;;     (if (length (string-trim content))
+  ;;       (concat "#+begin_" 
+  ;;               (downcase (or wrap-type "quote")) 
+  ;;               "\n" 
+  ;;               content 1
+  ;;               "\n"
+  ;;               "#+end_" 
+  ;;               (downcase (or wrap-type "quote")))
+  ;;       ""
+  ;;       )))
   (setq org-capture-templates
         (doct '(
                 ("Tasks"
@@ -2855,7 +2857,7 @@ Define our templates for =org-capture=. There are lots of them.
                             )
                             ("Journal"
                              :keys "j"
-                             :type entry  :olp ("Journal") :file "proj_eos.org"
+                             :type entry  :olp ("Journal") :file "proj_eo2s.org"
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template  "* %? :JOURNAL:\n%U\n"
                            )
@@ -2902,15 +2904,39 @@ Define our templates for =org-capture=. There are lots of them.
                 ("Someday" :keys "S" :file "someday.org" :headline "Inbox"
                  :template "* TODO%c\n%U\n")
 
+              ("Cookbook" 
+                  :keys "c" :file "recipes.org" :type entry
+                  :template "%(org-chef-get-recipe-from-url)"
+                  :empty-lines 1)
+              ("Cookbook (manual)" 
+                  :keys "C" :file "recipes.org" :type entry
+                  :template 
+                  (
+                      "* %^{Recipe title: }"
+                      ":PROPERTIES:"
+                      ":source-url:"
+                      ":servings:"
+                      ":prep-time:"
+                      ":cook-time:"
+                      ":ready-in:"
+                      ":END:"
+                      "*** Ingredients"
+                      "   %?"
+                      "*** Directions"
+                      ""
+                      ""
+                  )
+                )
+
                 ("Protocol" :keys "p" :file "codex.org"
                  :template ("* [[%:link][%:description]]"
                             ""
                             "Captured at: %U"
                             ""
-                            ;;"#+begin_quote"
-                            ;;"%i"
-                            ;;"#+end_quote"
-                            "%(tlc/maybe-wrap-quotes \"%i\")"
+                            "#+begin_quote"
+                            "%i"
+                            "#+end_quote"
+                            ;;"%(tlc/maybe-wrap-quotes \"%i\")"
                             ))
 
                 ("Protocol Link" :keys "L" :file "codex.org"
@@ -2932,8 +2958,7 @@ Define our templates for =org-capture=. There are lots of them.
                             "  %U"
                             )
                  )
-                )
-              ))
+                )))
 #+end_src
 
 ******* Align tags after capturing

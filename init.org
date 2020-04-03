@@ -1,12 +1,12 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-04-01 08:11:20 tammy.cravit>
+#+DATE: Time-stamp: <2020-04-03 10:48:35 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
 #+LATEX_HEADER: \usepackage[utf8]{inputenc}
-#+PROPERTY: header-args :tangle yes
+#+PROPERTY: header-args :tangle init.el
 
 * About
 
@@ -46,7 +46,7 @@ All changes to the configuration should be done in =init.org=, *not* in
 is replaced the first time Emacs is started (assuming it has been renamed
 to =~/.emacs.d=).
 
-Emacs can't load =.org=-files directly, but =org-mode= provides functions
+Emacs can't load =.org=-files directly, but [[https://orgmode.org][org-mode]] provides functions
 to extract the code blocks and write them to a file. There are multiple
 ways of handling this; like suggested by [[http://emacs.stackexchange.com/questions/3143/can-i-use-org-mode-to-structure-my-emacs-or-other-el-configuration-file][this StackOverflow post]], one
 could just use =org-babel-load-file=, but there are problems with
@@ -145,11 +145,10 @@ This configuration is written to be as platform-agnostic as I can make
 it. However, I do make the following assumptions:
 
 1. You're using [[https://ftp.gnu.org/gnu/emacs/][Emacs]] 26. This will *not* work correctly with previous
-   versions of Emacs because of the =posframe= library's dependencies.
+   versions of Emacs because of the [[https://github.com/tumashu/posframe][posframe]] library's dependencies.
 2. You have [[https://git-scm.com/][Git]] installed, and the =git= executable is in your path.
 
 * Emacs Configuration
-
 *** Index
 :PROPERTIES:
 :VISIBILITY:  folded
@@ -418,15 +417,6 @@ Install some packages from quelpa.
                :quelpa (org-ql 
                         :fetcher github 
                         :repo "alphapapa/org-ql"))
-  (use-package bufler
-               :quelpa (bufler 
-                        :fetcher github 
-                        :repo "alphapapa/bufler.el")
-               :bind (
-                        ("\C-xb"    . bufler-switch-buffer)
-                        ("\C-x\C-b" . bufler-list)
-                     ))
-               
   (use-package noflet
                :quelpa (noflet 
                         :fetcher github 
@@ -1441,24 +1431,18 @@ of other stuff. As you'll see, it's VERY customizable.
     (require 'org)
 
     ;; Load org extensions
-    (setq org-modules
-          (quote (
-;                  org-ctags
-                  org-datetree
-                  org-element
-                  org-protocol
-                  org-docview
-                  org-id
-                  org-info
-                  org-inlinetask
-                  org-mouse
-                  org-protocol
-                  org-collector
-                  org-depend
-                  )))
-
-  (eval-after-load 'org
-   '(org-load-modules-maybe t))
+    (require 'org-datetree)
+    (require 'org-element)
+    (require 'org-protocol)
+    (require 'org-docview)
+    (require 'org-id)
+    (require 'org-info)
+    (require 'org-inlinetask)
+    (require 'org-mouse)
+    (require 'org-protocol)
+    (require 'org-collector)
+    (require 'org-depend)
+    (require 'org-checklist)
 #+end_src
 
 Load org-babel (code) extensions for languages we use.
@@ -1585,6 +1569,7 @@ files.
   (add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
   (add-to-list 'auto-mode-alist '("\\.org_archive$" . org-mode))
   (add-to-list 'auto-mode-alist '("\\.txt$" . org-mode))
+
   (setq default-major-mode 'org-mode)
 #+end_src
 
@@ -2178,56 +2163,76 @@ Generate the diary file in =~/.emacs.d/diary=.
 &%%(diary-float 11 4 4) Thanksgiving
 #+end_src
 
-Include sunrise and sunset in the diary. From [[https://orgmode.org/worg/org-hacks.html#org6abe7b1][here]]. 
+Include sunrise and sunset in the diary. From [[https://orgmode.org/worg/org-hacks.html#org6abe7b1][here]], modified to do location
+lookups from the ~known-locations-alist~ alist. 
 
 #+begin_src emacs-lisp
-(setq calendar-latitude 33.454550)
-(setq calendar-longitude -112.055730)
-(setq calendar-location-name "Phoenix, AZ")
+  (defcustom known-locations-alist nil "Known locations for sunrise/sunset calculations"
+                             :type '(alist :key-type string :value-type (group float float))
+                             :group 'diary)
 
-(autoload 'solar-sunrise-sunset "solar.el")
-(autoload 'solar-time-string "solar.el")
+  (custom-set-variables '(known-locations-alist
+      (quote
+          (("Phoenix, AZ" 33.45455 -112.05573)
+           ("Scottsdale, AZ" 33.4942 -111.9261)
+           ("San Luis Obispo, CA" 35.2828 -120.6596)
+           ("Toronto, Ont" 43.6532 -79.3832)
+           ; Default location - do not remove
+           ("Groom Lake, NV" 37.234332396 -115.80666344)))))
 
-(defun diary-sunrise ()
-  "Local time of sunrise as a diary entry.
-The diary entry can contain `%s' which will be replaced with
-`calendar-location-name'."
-  (let ((l (solar-sunrise-sunset date)))
-    (when (car l)
-      (concat
-       (if (string= entry "")
-           "Sunrise"
-         (format entry (eval calendar-location-name))) " "
-         (solar-time-string (caar l) nil)))))
+  ;; Set the current location. Should match a lookup in known-locations-alist.
+  (setq calendar-location-name "Phoenix, AZ")
 
-(defun diary-sunset ()
-  "Local time of sunset as a diary entry.
-The diary entry can contain `%s' which will be replaced with
-`calendar-location-name'."
-  (let ((l (solar-sunrise-sunset date)))
-    (when (cadr l)
-      (concat
-       (if (string= entry "")
-           "Sunset"
-         (format entry (eval calendar-location-name))) " "
-         (solar-time-string (caadr l) nil)))))
+  ;; Look up and set latitude and longitude.
+  (unless (assoc calendar-location-name known-locations-alist)
+      (setq calendar-location-name "Groom Lake, NV"))
 
-(org-no-warnings (defvar date))
-(defun org-lunar-phases ()
-  "Show lunar phase in Agenda buffer."
-  (require 'lunar)
-  (let* ((phase-list (lunar-phase-list (nth 0 date) (nth 2 date)))
-         (phase (cl-find-if (lambda (phase) (equal (car phase) date))
-                            phase-list)))
-    (when phase
-      (setq ret (concat (lunar-phase-name (nth 2 phase)) " "
-                        (substring (nth 1 phase) 0 5))))))
+  (setq calendar-latitude  (nth 1 (assoc calendar-location-name known-locations-alist)))
+  (setq calendar-longitude (nth 2 (assoc calendar-location-name known-locations-alist))) 
 
-(setq lunar-phase-names
-      '("● New Moon" ; Unicode symbol: 🌑 Use full circle as fallback
-        "☽ First Quarter Moon"
-        "○ Full Moon" ; Unicode symbol: 🌕 Use empty circle as fallback
-        "☾ Last Quarter Moon"))
+  (autoload 'solar-sunrise-sunset "solar.el")
+  (autoload 'solar-time-string "solar.el")
+
+  (defun diary-sunrise ()
+    "Local time of sunrise as a diary entry.
+  The diary entry can contain `%s' which will be replaced with
+  `calendar-location-name'."
+    (let ((l (solar-sunrise-sunset date)))
+      (when (car l)
+        (concat
+         (if (string= entry "")
+             "Sunrise"
+           (format entry (eval calendar-location-name))) " "
+           (solar-time-string (caar l) nil)))))
+
+  (defun diary-sunset ()
+    "Local time of sunset as a diary entry.
+  The diary entry can contain `%s' which will be replaced with
+  `calendar-location-name'."
+    (let ((l (solar-sunrise-sunset date)))
+      (when (cadr l)
+        (concat
+         (if (string= entry "")
+             "Sunset"
+           (format entry (eval calendar-location-name))) " "
+           (solar-time-string (caadr l) nil)))))
+
+  (org-no-warnings (defvar date))
+  (defun org-lunar-phases ()
+    "Show lunar phase in Agenda buffer."
+    (require 'lunar)
+    (let* ((phase-list (lunar-phase-list (nth 0 date) (nth 2 date)))
+           (phase (cl-find-if (lambda (phase) (equal (car phase) date))
+                              phase-list)))
+      (when phase
+        (setq ret (concat (lunar-phase-name (nth 2 phase)) " "
+                          (substring (nth 1 phase) 0 5))))))
+
+  (setq lunar-phase-names
+        '("● New Moon" ; Unicode symbol: 🌑 Use full circle as fallback
+          "☽ First Quarter Moon"
+          "○ Full Moon" ; Unicode symbol: 🌕 Use empty circle as fallback
+          "☾ Last Quarter Moon"))
 #+end_src
 
 Set up where org windows appear.

@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-04-03 10:48:35 tammy.cravit>
+#+DATE: Time-stamp: <2020-04-03 11:05:58 tammy.cravit>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -150,9 +150,6 @@ it. However, I do make the following assumptions:
 
 * Emacs Configuration
 *** Index
-:PROPERTIES:
-:VISIBILITY:  folded
-:END:
 ***** [[*Preliminaries][Preliminaries]]
 ***** [[*Package Installation][Package Installation]]
 ***** [[*Shell Integration][Shell Integration]]
@@ -212,7 +209,6 @@ it. However, I do make the following assumptions:
 ;;;; Preliminary Configuration Items
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(require 'cl)
 (require 'cl-lib)
 
 #+end_src
@@ -1780,99 +1776,6 @@ selected subtree.
     (org-set-property "VISIBILITY" "folded"))
 #+end_src
 
-******* Count Words in an Org file
-
-From [[https://orgmode.org/worg/org-hacks.html][here]].
-
-#+begin_src emacs-lisp
-(defun org-word-count (beg end
-                           &optional count-latex-macro-args?
-                           count-footnotes?)
-  "Report the number of words in the Org mode buffer or selected region.
-Ignores:
-- comments
-- tables
-- source code blocks (#+BEGIN_SRC ... #+END_SRC, and inline blocks)
-- hyperlinks (but does count words in hyperlink descriptions)
-- tags, priorities, and TODO keywords in headers
-- sections tagged as 'not for export'.
-
-The text of footnote definitions is ignored, unless the optional argument
-COUNT-FOOTNOTES? is non-nil.
-
-If the optional argument COUNT-LATEX-MACRO-ARGS? is non-nil, the word count
-includes LaTeX macro arguments (the material between {curly braces}).
-Otherwise, and by default, every LaTeX macro counts as 1 word regardless
-of its arguments."
-  (interactive "r")
-  (unless mark-active
-    (setf beg (point-min)
-          end (point-max)))
-  (let ((wc 0)
-        (latex-macro-regexp "\\\\[A-Za-z]+\\(\\[[^]]*\\]\\|\\){\\([^}]*\\)}"))
-    (save-excursion
-      (goto-char beg)
-      (while (< (point) end)
-        (cond
-         ;; Ignore comments.
-         ((or (org-in-commented-line) (org-at-table-p))
-          nil)
-         ;; Ignore hyperlinks. But if link has a description, count
-         ;; the words within the description.
-         ((looking-at org-bracket-link-analytic-regexp)
-          (when (match-string-no-properties 5)
-            (let ((desc (match-string-no-properties 5)))
-              (save-match-data
-                (incf wc (length (remove "" (org-split-string
-                                             desc "\\W")))))))
-          (goto-char (match-end 0)))
-         ((looking-at org-any-link-re)
-          (goto-char (match-end 0)))
-         ;; Ignore source code blocks.
-         ((org-in-regexps-block-p "^#\\+BEGIN_SRC\\W" "^#\\+END_SRC\\W")
-          nil)
-         ;; Ignore inline source blocks, counting them as 1 word.
-         ((save-excursion
-            (backward-char)
-            (looking-at org-babel-inline-src-block-regexp))
-          (goto-char (match-end 0))
-          (setf wc (+ 2 wc)))
-         ;; Count latex macros as 1 word, ignoring their arguments.
-         ((save-excursion
-            (backward-char)
-            (looking-at latex-macro-regexp))
-          (goto-char (if count-latex-macro-args?
-                         (match-beginning 2)
-                       (match-end 0)))
-          (setf wc (+ 2 wc)))
-         ;; Ignore footnotes.
-         ((and (not count-footnotes?)
-               (or (org-footnote-at-definition-p)
-                   (org-footnote-at-reference-p)))
-          nil)
-         (t
-          (let ((contexts (org-context)))
-            (cond
-             ;; Ignore tags and TODO keywords, etc.
-             ((or (assoc :todo-keyword contexts)
-                  (assoc :priority contexts)
-                  (assoc :keyword contexts)
-                  (assoc :checkbox contexts))
-              nil)
-             ;; Ignore sections marked with tags that are
-             ;; excluded from export.
-             ((assoc :tags contexts)
-              (if (intersection (org-get-tags-at) org-export-exclude-tags
-                                :test 'equal)
-                  (org-forward-same-level 1)
-                nil))
-             (t
-              (incf wc))))))
-        (re-search-forward "\\w+\\W*")))
-    (message (format "%d words in %s." wc
-                     (if mark-active "region" "buffer")))))
-#+end_src
-
 ******* Check for misplaced SCHEDULED and DEADLINE cookies
 
 From [[https://orgmode.org/worg/org-hacks.html][here]].
@@ -1881,7 +1784,7 @@ From [[https://orgmode.org/worg/org-hacks.html][here]].
 (defun org-check-misplaced-cookies ()
   "Check misformatted entries in the current buffer."
   (interactive)
-  (show-all)
+  (outline-show-all)
   (org-map-entries
    (lambda ()
      (when (and (move-beginning-of-line 2)
@@ -2141,7 +2044,7 @@ Set some options that speed up agenda processing.
   (setq org-agenda-dim-blocked-tasks nil)
   (setq org-agenda-inhibit-startup t)
   (setq org-agenda-use-tag-inheritance t)
-  (setq org-agenda-ignore-drawer-properties '(effort appt category))
+  (setq org-agenda-ignore-properties '(effort appt category))
 #+end_src
 
 Generate the diary file in =~/.emacs.d/diary=.
@@ -2217,7 +2120,7 @@ lookups from the ~known-locations-alist~ alist.
            (format entry (eval calendar-location-name))) " "
            (solar-time-string (caadr l) nil)))))
 
-  (org-no-warnings (defvar date))
+  (with-no-warnings (defvar date))
   (defun org-lunar-phases ()
     "Show lunar phase in Agenda buffer."
     (require 'lunar)
@@ -2258,8 +2161,8 @@ agendas (defined in =org-agenda-custom-commands=) are automatically filtered.
   (defvar tlc/org-work-project-files nil "Work projects to include in agenda.")
 
   (setq tlc/org-personal-project-files (list
-                                      (concat org-directory "/proj_pmp_certification.org")
-                                      (concat org-directory "/proj_college.org")
+                                    ;  (concat org-directory "/proj_pmp_certification.org")
+                                    ;  (concat org-directory "/proj_college.org")
                                       (concat org-directory "/proj_transformation_2e.org")
                                       (concat org-directory "/proj_az_mystery_1.org")
                                       ))
@@ -2284,7 +2187,8 @@ agendas (defined in =org-agenda-custom-commands=) are automatically filtered.
                                     (concat org-directory "/calls.org"))
                                    tlc/org-work-project-files))
 
-  (setq org-agenda-files (cl-union tlc/org-personal-agenda-files tlc/org-work-agenda-files))
+;  (setq org-agenda-files (cl-union tlc/org-personal-agenda-files tlc/org-work-agenda-files))
+  (setq org-agenda-files tlc/org-personal-agenda-files)
 #+end_src
 
 Helper function for =org-agenda-custom-commands= to skip a subtree if

@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-04-03 11:05:58 tammy.cravit>
+#+DATE: Time-stamp: <2020-04-05 10:08:30 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -238,7 +238,11 @@ Set TLS settings for installations.
     (setq gnutls-verify-error nil)
     (setq gnutls-min-prime-bits 1024)
     (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
-    (add-to-list 'gnutls-trustfiles "/usr/local/etc/libressl/cert.pem"))
+    (when (file-exists-p "/usr/local/etc/libressl/cert.pem")
+        (add-to-list 'gnutls-trustfiles "/usr/local/etc/libressl/cert.pem"))
+    (when (file-exists-p (file-truename (concat invocation-directory "/../etc/cacert.pem")))
+        (add-to-list 'gnutls-trustfiles 
+           (file-truename (concat invocation-directory "/../etc/cacert.pem")))))
 #+end_src
 
 Load the packaging system and set up repositories.

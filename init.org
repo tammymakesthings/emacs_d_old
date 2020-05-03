@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-04-27 17:50:34 tammy>
+#+DATE: Time-stamp: <2020-05-03 17:12:39 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -422,70 +422,6 @@ Install some packages from quelpa.
                         :fetcher github 
                         :repo "nicferrier/emacs-noflet"))
 #+end_src
-
-Load the [[https://github.com/Fuco1/smartparens][smartparens]] package and set up a bunch of hooks and key
-bindings. This configuration comes from [[https://ebzzry.io/en/emacs-pairs/][here]].
-
-#+begin_src emacs-lisp :tangle no
-
-  (use-package smartparens
-               :quelpa (smartparens
-                        :fetcher github
-                        :repo "Fuco1/smartparens")
-               :config (progn 
-                         (show-smartparens-global-mode t)
-                         (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
-                         (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode)
-
-                         (bind-keys :map smartparens-mode-map
-                           ("C-M-a" . sp-beginning-of-sexp)
-                           ("C-M-e" . sp-end-of-sexp)
-                            
-                           ("C-<down>" . sp-down-sexp)
-                           ("C-<up>"   . sp-up-sexp)
-                           ("M-<down>" . sp-backward-down-sexp)
-                           ("M-<up>"   . sp-backward-up-sexp)
-                            
-                           ("C-M-f" . sp-forward-sexp)
-                           ("C-M-b" . sp-backward-sexp)
-                           
-                           ("C-M-n" . sp-next-sexp)
-                           ("C-M-p" . sp-previous-sexp)
-                           
-                           ("C-S-f" . sp-forward-symbol)
-                           ("C-S-b" . sp-backward-symbol)
-                           
-                           ("C-<right>" . sp-forward-slurp-sexp)
-                           ("M-<right>" . sp-forward-barf-sexp)
-                           ("C-<left>"  . sp-backward-slurp-sexp)
-                           ("M-<left>"  . sp-backward-barf-sexp)
-                           
-                           ("C-M-t" . sp-transpose-sexp)
-                           ("C-M-k" . sp-kill-sexp)
-                           ("C-k"   . sp-kill-hybrid-sexp)
-                           ("M-k"   . sp-backward-kill-sexp)
-                           ("C-M-w" . sp-copy-sexp)
-                           ("C-M-d" . delete-sexp)
-                           
-                           ("M-<backspace>" . backward-kill-word)
-                           ("C-<backspace>" . sp-backward-kill-word)
-                           ([remap sp-backward-kill-word] . backward-kill-word)
-                           
-                           ("M-[" . sp-backward-unwrap-sexp)
-                           ("M-]" . sp-unwrap-sexp)
-                           
-                           ("C-x C-t" . sp-transpose-hybrid-sexp)
-                            
-                           ("C-c ("  . wrap-with-parens)
-                           ("C-c ["  . wrap-with-brackets)
-                           ("C-c {"  . wrap-with-braces)
-                           ("C-c '"  . wrap-with-single-quotes)
-                           ("C-c \"" . wrap-with-double-quotes)
-                           ("C-c _"  . wrap-with-underscores)
-                           ("C-c `"  . wrap-with-back-quotes))
-               ))
-#+end_src
-
 *** Shell Integration
 
 #+begin_src emacs-lisp :tangle yes
@@ -1091,12 +1027,6 @@ automatically updated to the current time whenever the file is saved.
 #+begin_src emacs-lisp
   (when (fboundp 'time-stamp)
     (add-hook 'before-save-hook 'time-stamp))
-#+end_src
-
-***** Enable smartparens
-
-#+begin_src emacs-lisp
-  (require 'smartparens-config)
 #+end_src
 
 ***** Enable Hippie Expand

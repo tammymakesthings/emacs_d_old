@@ -17,9 +17,9 @@ ido.last
 init.el
 dot-gnus.el
 *bookmarks*
-init.el.firstrun
 .last-package-update-day
 settings-*.el
 diary
 ob-text.el
 org-archive-subtree-hierarchical.el
+

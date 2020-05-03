@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-04-05 10:08:30 tammy>
+#+DATE: Time-stamp: <2020-04-27 17:50:34 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -426,7 +426,7 @@ Install some packages from quelpa.
 Load the [[https://github.com/Fuco1/smartparens][smartparens]] package and set up a bunch of hooks and key
 bindings. This configuration comes from [[https://ebzzry.io/en/emacs-pairs/][here]].
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 
   (use-package smartparens
                :quelpa (smartparens
@@ -722,17 +722,30 @@ Load the [[https://draculatheme.com/emacs/][dracula]] theme if =tlc/theme-to-ena
 Load the [[https://github.com/hlissner/emacs-doom-themes][doom-themes]] system if =tlc/theme-to-enable= is set to ='doom=.
 
 #+begin_src emacs-lisp
-  (when (eq tlc/theme-to-enable 'doom)
-    (progn
-      (message "Enabling doom theme configuration")
-      (setq doom-themes-enable-bold t)
-      (setq doom-themes-enable-italic t)
-      (load-theme 'doom-challenger-deep t)
+    (when (eq tlc/theme-to-enable 'doom)
+      (progn
+        (message "Enabling doom theme configuration")
+        (setq doom-themes-enable-bold t)
+        (setq doom-themes-enable-italic t)
+        (if window-system
+            (progn
+              (load-theme 'doom-challenger-deep t)
+              (doom-themes-visual-bell-config)
+              (doom-themes-org-config)
+              (set-face-foreground 'org-hide "1e1c31")
+              (set-face-background 'org-hide "1e1c31")
+              )
+            (progn 
+              (load-theme 'doom-palenight t)
+              (doom-themes-visual-bell-config)
+              (doom-themes-org-config)
+              (set-face-foreground 'org-hide "1c1f28")
+              (set-face-background 'org-hide "1c1f28")
+            ))
 
-      (doom-themes-visual-bell-config)
-      (doom-themes-org-config)
-      (setq nlinum-highlight-current-line t)
-      (set-face-attribute 'default nil :height 110)))
+        (setq nlinum-highlight-current-line t)
+        (set-face-attribute 'default nil :height 110)
+))
 #+end_src
 
 ***** UI Font Selection
@@ -1140,7 +1153,7 @@ Load paredit mode. I have it disabled because it was making editing
 difficult.
 
 #+begin_src emacs-lisp
-  (autoload 'enable-paredit-mode "paredit" "Turn on pseudo-structural editing of Lisp code." t)
+;;  (autoload 'enable-paredit-mode "paredit" "Turn on pseudo-structural editing of Lisp code." t)
 
   ;;(add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode)
   ;;(add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
@@ -1169,19 +1182,17 @@ virtual machine. Clojure support for Emacs is provided by [[https://github.com/c
 Enable paredit for clojure.
 
 #+begin_src emacs-lisp
-  (add-hook 'clojure-mode-hook 'enable-paredit-mode)
+;;;;
+; Clojure
+;;;;
+
+; (add-hook 'clojure-mode-hook 'enable-paredit-mode)
 #+end_src
 
 Enable =subword-mode= for Clojure. This is useful for working with
 CamelCasedTokens such as Java class names.
 
 #+begin_src emacs-lisp
-;;;;
-;; Clojure
-;;;;
-
-;; Enable paredit for Clojure
-(add-hook 'clojure-mode-hook 'enable-paredit-mode)
 
 ;; This is useful for working with camel-case tokens, like names of
 ;; Java classes (e.g. JavaClassName)
@@ -1200,10 +1211,9 @@ CamelCasedTokens such as Java class names.
                 (1 font-lock-keyword-face))
                ("(\\(background?\\)"
                 (1 font-lock-keyword-face))))
-            (define-clojure-indent (fact 1))
-            (define-clojure-indent (facts 1))
             (rainbow-delimiters-mode)))
 
+(setq clojure-indent-style 'align-arguments)
 ;;;;
 ;; Cider
 ;;;;
@@ -1227,7 +1237,7 @@ CamelCasedTokens such as Java class names.
 (setq cider-repl-display-help-banner nil)
 
 ;; enable paredit in your REPL
-(add-hook 'cider-repl-mode-hook 'paredit-mode)
+; (add-hook 'cider-repl-mode-hook 'paredit-mode)
 
 ;; Use clojure mode for other extensions
 (add-to-list 'auto-mode-alist '("\\.edn$" . clojure-mode))
@@ -1607,6 +1617,15 @@ Set org indent settings.
   (setq org-odd-levels-only t)
   (setq org-adapt-indentation t)
   (setq org-indent-indentation-per-level 2)
+
+  (defface org-hide
+    '((((background light)) (:foreground "1c1f28"))
+    (((background dark)) (:foreground "1c1f28")))
+    "Face used to hide leading stars in headlines.                                                                                               
+    The foreground color of this face should be 
+    equal to the background color of the frame."
+    :group 'org-faces)
+
 #+end_src
 
 Enforce dependencies on TODOs and checkbox lists - the parent cannot be marked
@@ -3168,6 +3187,12 @@ Don't prompt before running code in org.
 
 #+begin_src emacs-lisp
   (setq org-confirm-babel-evaluate nil)
+#+end_src
+
+Edit code blocks in the current window.
+
+#+begin_src emacs-lisp
+  (setq org-src-window-setup 'current-window)
 #+end_src
 
 Indent should behave natively in =emacs-lisp= source code blocks. From [[https://stackoverflow.com/questions/15773354/indent-code-in-org-babel-src-blocks][here]].

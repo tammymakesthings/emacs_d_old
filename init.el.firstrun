@@ -1,18 +1,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; This file replaces itself with the actual configuration at first run.
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; This file replaces itself with the actual configuration at first run.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  ;; We can’t tangle without org!
-  (require ‘org)
+;; We can't tangle without org!
+(require 'org)
 
-  (defvar tlc/init-org-file (concat user-emacs-directory “init.org”))
-  (defvar tlc/init-el-file  (concat user-emacs-directory “init.el”))
+(defvar tlc/init-org-file (concat user-emacs-directory "init.org"))
+(defvar tlc/init-el-file  (concat user-emacs-directory "init.el"))
 
-  (find-file tlc/init-org-file)
-  (org-babel-tangle)
-  (load-file tlc/init-el-file)
-  (byte-compile-file tlc/init-el-file)
+(find-file tlc/init-org-file)
+(org-babel-tangle)
+(load-file tlc/init-el-file)
+(byte-compile-file tlc/init-el-file)
 
-  (if (file-readable-p (concat user-emacs-directory “dot-gnus.el”))
-      (copy-file (concat user-emacs-directory “dot-gnus.el”)
-                 (file-truename “~/.gnus.el”) t t t t))
+(if (file-readable-p (concat user-emacs-directory "dot-gnus.el"))
+    (copy-file (concat user-emacs-directory "dot-gnus.el")
+               (file-truename "~/.gnus.el") t t t t))

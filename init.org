@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-05-03 17:12:39 tammy>
+#+DATE: Time-stamp: <2020-05-06 17:40:42 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1200,6 +1200,30 @@ CamelCasedTokens such as Java class names.
      (define-key clojure-mode-map (kbd "C-M-r") 'cider-refresh)
      (define-key clojure-mode-map (kbd "C-c u") 'cider-user-ns)
      (define-key cider-mode-map (kbd "C-c u") 'cider-user-ns)))
+#+end_src
+
+***** Markdown
+
+Set up Markdown mode.
+
+#+begin_src emacs-lisp
+(defun tlc/markdown-mode-hook nil
+  "Setup hook for Markdown mode."
+  (interactive)
+  (set-fill-column 78)
+  (auto-fill-mode t)
+  (visual-line-mode t))
+
+(add-hook 'markdown-mode-hook 'tlc/markdown-mode-hook)
+#+end_src
+
+Check parens in a Markdown file on saving.
+
+#+begin_src emacs-lisp
+(add-hook 'markdown-mode-hook
+          (lambda ()
+            (when buffer-file-name
+              (add-hook 'after-save-hook 'check-parens nil t))))
 #+end_src
 
 ***** Python

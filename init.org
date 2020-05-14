@@ -1,7 +1,7 @@
 -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-05-06 17:40:42 tammy>
+#+DATE: Time-stamp: <2020-05-14 14:25:05 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -713,7 +713,7 @@ The first one of these that's found will be used.
          ((find-font (font-spec :name "Cascadia Code PL"))
           (progn
             (setq tlc/frame-font-face "Cascadia Code PL")
-            (setq tlc/frame-font-size 120)))
+            (setq tlc/frame-font-size 130)))
          ((find-font (font-spec :name "Source Code Pro"))
           (progn
             (setq tlc/frame-font-face "Source Code Pro")
@@ -758,7 +758,7 @@ window maximized.
 #+begin_src emacs-lisp
   (if window-system
     (progn
-      (if (eq tlc/number-of-displays 1)
+      (if (and (eq tlc/number-of-displays 1) (eq system-type 'windows-nt))
           ;; One monitor - make the window shorter and mazimize it
           (setq initial-frame-alist '((top . 5) (left . 5) (width . 132)
                                       (height . 28) 

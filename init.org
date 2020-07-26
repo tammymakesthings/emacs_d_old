@@ -1,4 +1,4 @@
--*- mode: org; fill-column: 78; -*-
+* -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
 #+DATE: Time-stamp: <2020-05-14 14:25:05 tammy>
@@ -20,8 +20,8 @@ More details about the detangling process are [[*Detangling][here]].
 
 The master source for this file is [[https://github.com/tammymakesthings/emacs_d][here]].
 
-* Lisp File Header 
- 
+* Lisp File Header
+
 #+begin_src emacs-lisp :tangle yes
    ;;; -*- mode: emacs-lisp; lexical-binding: t -*-
    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -241,7 +241,7 @@ Set TLS settings for installations.
     (when (file-exists-p "/usr/local/etc/libressl/cert.pem")
         (add-to-list 'gnutls-trustfiles "/usr/local/etc/libressl/cert.pem"))
     (when (file-exists-p (file-truename (concat invocation-directory "/../etc/cacert.pem")))
-        (add-to-list 'gnutls-trustfiles 
+        (add-to-list 'gnutls-trustfiles
            (file-truename (concat invocation-directory "/../etc/cacert.pem")))))
 #+end_src
 
@@ -284,88 +284,80 @@ off for this because TLS is disabled.
     (package-install 'use-package))
 
   (unless (package-installed-p 'quelpa)
-    (package-install 'quelpa))
+    (with-temp-buffer
+      (url-insert-file-contents "https://github.com/quelpa/quelpa/raw/master/quelpa.el")
+      (eval-buffer)
+      (quelpa-self-upgrade)))
+  (quelpa
+    '(quelpa-use-package :fetcher git
+                         :url "https://github.com/quelpa/quelpa-use-package.git"))
+(require 'quelpa-use-package)
+#+end_src
+
+Bootstrap the straight package manager.
+
+#+begin_src emacs-lisp
+  (defvar bootstrap-version)
+  (let (
+      (bootstrap-file
+        (expand-file-name "straight/repos/straight.el/bootstrap.el"
+                          user-emacs-directory))
+      (bootstrap-version 5))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
 #+end_src
 
 Now let's define the packages we'll need to load from ELPA.
 
 #+begin_src emacs-lisp
-  ;; The packages you want installed. You can also install these
-  ;; manually with M-x package-install
-  ;; Add in your own as you wish:
-  (defvar my-packages
-    '(
-      all-the-icons
-      arduino-mode
-      auctex
-      cider
-      cider-hydra
-      clojure-mode
-      clojure-mode-extra-font-locking
-      coffee-mode
-      dash
-      dashboard
-      dimmer
-      doom-themes
-      dracula-theme
-      git
-      gnuplot
-      gnuplot-mode
-      ido-completing-read+
-      magit
-      magit-org-todos
-      magithub
-      markdown-mode
-      muse
-      org-capture-pop-frame
-      page-break-lines
-      paredit
-      posframe
-      pretty-hydra
-      projectile
-      py-autopep8
-      py-test
-      pydoc
-      pyenv-mode
-      pyenv-mode-auto
-      pylint
-      python-black
-      python-docstring
-      python-environment
-      python-mode
-      python-pytest
-      python-test
-      pythonic
-      pyvenv
-      rainbow-delimiters
-      slime
-      smalltalk-mode
-      smex
-      spice-mode
-      tagedit
-      ts
-      virtualenvwrapper
-      yaml-mode
-      )
-    )
+(straight-use-package 'all-the-icons)
+(straight-use-package 'auctex)
+(straight-use-package 'cider)
+(straight-use-package 'cider-hydra)
+(straight-use-package 'clojure-mode)
+(straight-use-package 'clojure-mode-extra-font-locking)
+(straight-use-package 'coffee-mode)
+(straight-use-package 'dash)
+(straight-use-package 'dashboard)
+(straight-use-package 'dimmer)
+(straight-use-package 'doom-themes)
+(straight-use-package 'dracula-theme)
+(straight-use-package 'git)
+(straight-use-package 'gnuplot)
+(straight-use-package 'ido-completing-read+)
+(straight-use-package 'magit)
+(straight-use-package 'magit-org-todos)
+(straight-use-package 'magithub)
+(straight-use-package 'markdown-mode)
+(straight-use-package 'muse)
+(straight-use-package 'page-break-lines)
+(straight-use-package 'paredit)
+(straight-use-package 'posframe)
+(straight-use-package 'pretty-hydra)
+(straight-use-package 'projectile)
+(straight-use-package 'rainbow-delimiters)
+(straight-use-package 'slime)
+(straight-use-package 'smalltalk-mode)
+(straight-use-package 'smex)
+(straight-use-package 'tagedit)
+(straight-use-package 'ts)
+(straight-use-package 'virtualenvwrapper)
 #+end_src
 
 Some extra stuff is needed on MacOS.
 
 #+begin_src emacs-lisp
   (if (eq system-type 'darwin)
-     (add-to-list 'my-packages 'exec-path-from-shell))
+     (straight-use-package 'exec-path-from-shell'))
 #+end_src
 
 And, now we're ready to install packages.
-
-#+begin_src emacs-lisp
-  (dolist (p my-packages)
-    (when (not (package-installed-p p))
-      (package-install p)))
-#+end_src
-
-Install some packages from quelpa.
 
 #+begin_src emacs-lisp
   (unless (package-installed-p 'quelpa)
@@ -381,6 +373,7 @@ Install some packages from quelpa.
       :url "https://github.com/quelpa/quelpa-use-package.git"))
 
   (require 'quelpa-use-package)
+
 
   ; Upgrade packages at most every 7 days
   (setq quelpa-upgrade-interval 7)
@@ -398,30 +391,31 @@ Install some packages from quelpa.
 
   ; Load org-plus-contrib from the orgmode.org elpa repository
   (use-package org                 :ensure org-plus-contrib)
-  (use-package doct                :ensure t :commands (doct))
-  (use-package ts                  :ensure t)
-  (use-package s                   :ensure t)
-  (use-package auto-package-update :ensure t)
+  (straight-use-package 'ts                  :ensure t)
+  (straight-use-package 's                   :ensure t)
+  (straight-use-package 'auto-package-update :ensure t)
+  (straight-use-package 'doct)
 
-  (use-package org-super-agenda
-               :quelpa (org-super-agenda 
-                        :fetcher github 
-                        :repo "alphapapa/org-super-agenda"))
 
-  (use-package org-sidebar
-               :quelpa (org-sidebar 
-                        :fetcher github 
-                        :repo "alphapapa/org-sidebar"))
+  (straight-use-package 'yaml-mode)
+  (straight-use-package 'spice-mode)
 
-  (use-package org-ql
-               :quelpa (org-ql 
-                        :fetcher github 
-                        :repo "alphapapa/org-ql"))
-  (use-package noflet
-               :quelpa (noflet 
-                        :fetcher github 
-                        :repo "nicferrier/emacs-noflet"))
+  (straight-use-package 'py-test)
+  (straight-use-package 'pyenv-mode-auto)
+  (straight-use-package 'pylint)
+  (straight-use-package 'py-autopep8)
+  (straight-use-package 'pydoc)
+  (straight-use-package 'pyenv-mode)
+  (straight-use-package 'python-black)
+  (straight-use-package 'python-docstring)
+  (straight-use-package 'elpy)
+
+  (straight-use-package 'org-super-agenda)
+  (straight-use-package 'org-sidebar)
+  (straight-use-package 'org-ql)
+  (straight-use-package 'noflet)
 #+end_src
+
 *** Shell Integration
 
 #+begin_src emacs-lisp :tangle yes
@@ -638,7 +632,7 @@ Initialize the theme system.
   (add-to-list 'custom-theme-load-path "~/.emacs.d/themes")
   (add-to-list 'load-path "~/.emacs.d/themes")
 
-  (defvar tlc/theme-to-enable 'doom 
+  (defvar tlc/theme-to-enable 'doom
    "Specify which of the following theme blocks to enable.")
 #+end_src
 
@@ -671,7 +665,7 @@ Load the [[https://github.com/hlissner/emacs-doom-themes][doom-themes]] system i
               (set-face-foreground 'org-hide "1e1c31")
               (set-face-background 'org-hide "1e1c31")
               )
-            (progn 
+            (progn
               (load-theme 'doom-palenight t)
               (doom-themes-visual-bell-config)
               (doom-themes-org-config)
@@ -761,7 +755,7 @@ window maximized.
       (if (and (eq tlc/number-of-displays 1) (eq system-type 'windows-nt))
           ;; One monitor - make the window shorter and mazimize it
           (setq initial-frame-alist '((top . 5) (left . 5) (width . 132)
-                                      (height . 28) 
+                                      (height . 28)
                                       (fullscreen . maximized)))
         ;; Multiple monitors - taller window, not maximized
         (setq initial-frame-alist '((top . 15) (left . 15)
@@ -856,26 +850,26 @@ This code allows you to toggle the direction the window is split. From [[https:/
     (interactive)
     (if (= (count-windows) 2)
         (let* ((this-win-buffer (window-buffer))
-	       (next-win-buffer (window-buffer (next-window)))
-	       (this-win-edges (window-edges (selected-window)))
-	       (next-win-edges (window-edges (next-window)))
-  	       (this-win-2nd (not (and (<= (car this-win-edges)
-  					   (car next-win-edges))
-				       (<= (cadr this-win-edges)
-					   (cadr next-win-edges)))))
-  	       (splitter
-	        (if (= (car this-win-edges)
-		       (car (window-edges (next-window))))
-		    'split-window-horizontally
-		  'split-window-vertically)))
-	  (delete-other-windows)
-	  (let ((first-win (selected-window)))
-	    (funcall splitter)
-	    (if this-win-2nd (other-window 1))
-	    (set-window-buffer (selected-window) this-win-buffer)
-	    (set-window-buffer (next-window) next-win-buffer)
-	    (select-window first-win)
-	    (if this-win-2nd (other-window 1))))))
+         (next-win-buffer (window-buffer (next-window)))
+         (this-win-edges (window-edges (selected-window)))
+         (next-win-edges (window-edges (next-window)))
+           (this-win-2nd (not (and (<= (car this-win-edges)
+               (car next-win-edges))
+               (<= (cadr this-win-edges)
+             (cadr next-win-edges)))))
+           (splitter
+          (if (= (car this-win-edges)
+           (car (window-edges (next-window))))
+        'split-window-horizontally
+      'split-window-vertically)))
+    (delete-other-windows)
+    (let ((first-win (selected-window)))
+      (funcall splitter)
+      (if this-win-2nd (other-window 1))
+      (set-window-buffer (selected-window) this-win-buffer)
+      (set-window-buffer (next-window) next-win-buffer)
+      (select-window first-win)
+      (if this-win-2nd (other-window 1))))))
 
   (define-key ctl-x-4-map "t" 'toggle-window-split)
 #+end_src
@@ -1364,9 +1358,9 @@ file save hook.
   (setq gnus-select-method '(nntp "news.gmane.io"))
   (setq smtpmail-smtp-server "smtp.gmail.com")
   (setq smtpmail-smtp-service 587)
-  (setq message-send-mail-function 'smtpmail-send-it) 
-  (setq send-mail-function 'smtpmail-send-it) 
-    
+  (setq message-send-mail-function 'smtpmail-send-it)
+  (setq send-mail-function 'smtpmail-send-it)
+
   (define-key gnus-summary-mode-map "d" 'gnus-summary-mark-as-expirable)
 
   (defun my-message-mode-setup ()
@@ -1434,7 +1428,7 @@ Load org-babel (code) extensions for languages we use.
       (spice . t)
       (sql . t)
      )
-    )    
+    )
 #+end_src
 
 Since version 8, Org uses a modular exporter. Load the exporter pieces
@@ -1457,7 +1451,7 @@ we need.
 ***** Org Text Export
 
 This is a hack to allow me to tangle literal text blocks from org files with
-babel. 
+babel.
 
 Create the hack file.
 
@@ -1494,7 +1488,7 @@ Create the hack file.
                     body
                     "")))
       text))
-	  
+
   ;;;###autoload
   (eval-after-load "org"
     '(add-to-list 'org-src-lang-modes '("text" . text)))
@@ -1575,8 +1569,8 @@ Set org indent settings.
   (defface org-hide
     '((((background light)) (:foreground "1c1f28"))
     (((background dark)) (:foreground "1c1f28")))
-    "Face used to hide leading stars in headlines.                                                                                               
-    The foreground color of this face should be 
+    "Face used to hide leading stars in headlines.
+    The foreground color of this face should be
     equal to the background color of the frame."
     :group 'org-faces)
 
@@ -1845,10 +1839,10 @@ From [[https://orgmode.org/worg/org-hacks.html][here]].
 Set the archiving location and options.
 
 #+begin_src emacs-lisp
-  (setq org-archive-location 
-    (concat 
+  (setq org-archive-location
+    (concat
        org-directory
-       "/archive/%s_archive_"  
+       "/archive/%s_archive_"
        (prin1-to-string (nth 5 (parse-time-string (current-time-string))))
        "::datetree/* Archive"
     ))
@@ -1939,7 +1933,7 @@ belongs as a list."
     (save-excursion
       (setq location org-archive-location
             afile (car (org-archive--compute-location
-		                   (or (org-entry-get nil "ARCHIVE" 'inherit) location)))
+                       (or (org-entry-get nil "ARCHIVE" 'inherit) location)))
             ;; heading (org-extract-archive-heading location)
             infile-p (equal file (abbreviate-file-name (or afile ""))))
       (unless afile
@@ -2005,7 +1999,7 @@ Set general org-agenda options.
   (setq org-agenda-skip-scheduled-if-deadline-is-shown 'repeated-after-deadline)
   (setq org-todo-repeat-to-state "TODO")
   (setq org-agenda-skip-scheduled-if-done t)
-  (setq org-agenda-skip-archived-trees t)1 
+  (setq org-agenda-skip-archived-trees t)1
   (setq org-agenda-skip-deadline-if-done t)
   (setq org-agenda-include-all-todo t)
   (setq org-agenda-include-diary t)
@@ -2044,7 +2038,7 @@ Generate the diary file in =~/.emacs.d/diary=.
 #+end_src
 
 Include sunrise and sunset in the diary. From [[https://orgmode.org/worg/org-hacks.html#org6abe7b1][here]], modified to do location
-lookups from the ~known-locations-alist~ alist. 
+lookups from the ~known-locations-alist~ alist.
 
 #+begin_src emacs-lisp
   (defcustom known-locations-alist nil "Known locations for sunrise/sunset calculations"
@@ -2068,7 +2062,7 @@ lookups from the ~known-locations-alist~ alist.
       (setq calendar-location-name "Groom Lake, NV"))
 
   (setq calendar-latitude  (nth 1 (assoc calendar-location-name known-locations-alist)))
-  (setq calendar-longitude (nth 2 (assoc calendar-location-name known-locations-alist))) 
+  (setq calendar-longitude (nth 2 (assoc calendar-location-name known-locations-alist)))
 
   (autoload 'solar-sunrise-sunset "solar.el")
   (autoload 'solar-time-string "solar.el")
@@ -2347,15 +2341,15 @@ Define the default set of tags.
 #+begin_src emacs-lisp
   (setq org-tag-alist
         (quote (
-                (:startgroup) 
-                ("PROJECT" . ?p) ("EOS" . ?e ) ("WORK" . ?w) ("LEARNING" . ?l) ("PERSONAL" . ?p) 
+                (:startgroup)
+                ("PROJECT" . ?p) ("EOS" . ?e ) ("WORK" . ?w) ("LEARNING" . ?l) ("PERSONAL" . ?p)
                 (:endgroup)
                 ("FLAGGED" . ?f)
-                (:startgroup) 
-                ("DELEGATED" . ?d) ("WAITING" . ?w) ("CANCELED" . ?c) 
+                (:startgroup)
+                ("DELEGATED" . ?d) ("WAITING" . ?w) ("CANCELED" . ?c)
                 (:endgroup)
-                (:startgroup) 
-                ("MEETING" . ?m) ("ONEONONE" . ?o) ("NOTE" . ?n) ("JOURNAL" . ?j) ("IDEA" . ?i) 
+                (:startgroup)
+                ("MEETING" . ?m) ("ONEONONE" . ?o) ("NOTE" . ?n) ("JOURNAL" . ?j) ("IDEA" . ?i)
                 (:endgroup)
                 )))
 #+end_src
@@ -2364,7 +2358,7 @@ Define font faces for tags.
 
 #+begin_src emacs-lisp
   (setq org-tag-faces
-        (quote 
+        (quote
          (
           ("PROJECT"    :foreground "forest green"        :weight bold :slant normal  :underline nil)
           ("EOS"        :foreground "gold"                :weight bold :slant normal  :underline t)
@@ -2398,45 +2392,45 @@ Define font faces for todo keyword states.
   (setq org-todo-keyword-faces
         (quote (
                 ;; Colors for the standard TODOs sequence
-                ("TODO"       :foreground "red" 
+                ("TODO"       :foreground "red"
                               :background "#1E1C31"
                               :weight bold :slant normal  :underline nil :overline nil)
-                ("NEXT"       :foreground "cyan" 
+                ("NEXT"       :foreground "cyan"
                               :background "#1E1C31"
                               :weight bold :slant normal  :underline nil :overline nil)
-                ("DOING"      :foreground "forest green" 
+                ("DOING"      :foreground "forest green"
                               :background "#1E1C31"
                               :weight bold :slant normal  :underline t   :overline nil)
-                ("WAITING"    :foreground "orange" 
+                ("WAITING"    :foreground "orange"
                               :background "#1E1C31"
                               :weight bold :slant oblique :underline nil :overline nil)
-                ("DELEGATED"  :foreground "orange" 
+                ("DELEGATED"  :foreground "orange"
                               :background "#1E1C31"
                               :weight bold :slant oblique :underline nil :overline nil)
-                ("DONE"       :foreground "dark slate gray" 
+                ("DONE"       :foreground "dark slate gray"
                               :background "#1E1C31"
                               :weight bold :slant normal  :underline nil :overline nil)
-                ("CANCELED"   :foreground "forest green" 
+                ("CANCELED"   :foreground "forest green"
                               :background "#1E1C31"
                               :weight bold :slant normal  :underline nil :overline nil)
-                ("FORWARD"    :foreground "dim gray" 
+                ("FORWARD"    :foreground "dim gray"
                               :background "#1E1C31"
-                              :weight bold :slant normal  :underline nil :overline nil) 
+                              :weight bold :slant normal  :underline nil :overline nil)
 
                 ;; Colors for the SOW workflow TODOs seqence
-                ("DRAFTING"   :foreground "turquoise2" 
+                ("DRAFTING"   :foreground "turquoise2"
                               :background "#1E1C31"
                               :weight bold :slant oblique :underline nil :overline nil)
-                ("REVIEW"     :foreground "DarkGoldenrod2" 
+                ("REVIEW"     :foreground "DarkGoldenrod2"
                               :background "#1E1C31"
                               :weight bold :slant oblique :underline nil :overline nil)
-                ("PENDING"    :foreground "orange" 
+                ("PENDING"    :foreground "orange"
                               :background "#1E1C31"
                               :weight bold :slant oblique :underline nil :overline nil)
-                ("UPLOADED"   :foreground "IndianRed1" 
+                ("UPLOADED"   :foreground "IndianRed1"
                               :background "#1E1C31"
                               :weight bold :slant oblique :underline nil :overline nil)
-                ("SENT"       :foreground "dark slate gray" 
+                ("SENT"       :foreground "dark slate gray"
                               :background "#1E1C31"
                               :weight bold :slant normal  :underline nil :overline nil)
                 )))
@@ -2501,7 +2495,7 @@ Helper functions.
       (if frame
           (window--display-buffer buffer
                                   (frame-selected-window frame)
-                                  'reuse) 
+                                  'reuse)
         (display-buffer-pop-up-frame
          buffer
          (push `(pop-up-frame-parameters (name . ,fname)) 'alist)
@@ -2552,7 +2546,7 @@ Open =org-capture= in a popout frame.
         ;; Force all relevant buffers to open in a specific capture frame.
         (push override 'display-buffer-alist)
 ;        (add-to-list 'display-buffer-alist override)
-        (aharris/with-advice 
+        (aharris/with-advice
             (;; Make Org-mode respect `display-buffer-alist'.
              (#'org-switch-to-buffer-other-window :override #'pop-to-buffer)
              ;; And stop Org-mode from messing with our window configuration.
@@ -2584,7 +2578,7 @@ Enable the popouts.
             #'aharris/org-capture-delete-capture-frame)
 #+end_src
 
-******* Capture Templates 
+******* Capture Templates
 
 Load [[https://github.com/progfolio/doct/][doct]], a helper library to declaratively set =org-capture-templates=.
 
@@ -2647,12 +2641,12 @@ Define our templates for =org-capture=. There are lots of them.
   ;;   "Wrap quoted text if provided."
   ;;   (if content
   ;;     (if (length (string-trim content))
-  ;;       (concat "#+begin_" 
-  ;;               (downcase (or wrap-type "quote")) 
-  ;;               "\n" 
+  ;;       (concat "#+begin_"
+  ;;               (downcase (or wrap-type "quote"))
+  ;;               "\n"
   ;;               content 1
   ;;               "\n"
-  ;;               "#+end_" 
+  ;;               "#+end_"
   ;;               (downcase (or wrap-type "quote")))
   ;;       ""
   ;;       )))
@@ -2669,13 +2663,13 @@ Define our templates for =org-capture=. There are lots of them.
                             ("Meeting with %?"
                              :keys "m"
                              :file "journal.org"
-                             :type entry  :olp ("Journal") 
+                             :type entry  :olp ("Journal")
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template "* Meeting with %? :MEETING:\n%U")
                             ("Meeting: %?"
                              :keys "M"
                              :file "journal.org"
-                             :type entry  :olp ("Journal") 
+                             :type entry  :olp ("Journal")
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template "* %<%Y-%m-%d> - %? :MEETING:\n%U")
                             ("Task"
@@ -2684,7 +2678,7 @@ Define our templates for =org-capture=. There are lots of them.
                             ("Call"
                              :keys "c"
                              :file "journal.org"
-                             :type entry  :olp ("Journal") 
+                             :type entry  :olp ("Journal")
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template "* Phone Call with %?\n%U")
                             ("Note"
@@ -2697,14 +2691,14 @@ Define our templates for =org-capture=. There are lots of them.
                             ("Journal"
                              :keys "j"
                              :file "journal.org"
-                             :type entry  :olp ("Journal") 
+                             :type entry  :olp ("Journal")
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template  "* %? :JOURNAL:\n%U\n"
                            )
                            ("Idea"
                              :keys "i"
                              :file "journal.org"
-                             :type entry  :olp ("Journal") 
+                             :type entry  :olp ("Journal")
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template  "* %? :JOURNAL:\n%U\n"
                            )
@@ -2790,13 +2784,13 @@ Define our templates for =org-capture=. There are lots of them.
                 ("Someday" :keys "S" :file "someday.org" :headline "Inbox"
                  :template "* TODO%c\n%U\n")
 
-              ("Cookbook" 
+              ("Cookbook"
                   :keys "c" :file "recipes.org" :type entry
                   :template "%(org-chef-get-recipe-from-url)"
                   :empty-lines 1)
-              ("Cookbook (manual)" 
+              ("Cookbook (manual)"
                   :keys "C" :file "recipes.org" :type entry
-                  :template 
+                  :template
                   (
                       "* %^{Recipe title: }"
                       ":PROPERTIES:"
@@ -3330,17 +3324,17 @@ Define a skeleton for org income/expense worksheets.
 Set key bindings for the org file skeletons.
 
 #+begin_src emacs-lisp
-  (define-key org-mode-map "\C-c0" 
+  (define-key org-mode-map "\C-c0"
                            (lambda nil
                              (interactive)
                              (tlc/org-project-skeleton)
                              (org-align-tags t)))
-  (define-key org-mode-map "\C-c9" 
+  (define-key org-mode-map "\C-c9"
                            (lambda nil
                              (interactive)
                              (tlc/org-file-header-skeleton)
                              (org-align-tags t)))
-  (define-key org-mode-map "\C-c8" 
+  (define-key org-mode-map "\C-c8"
                            (lambda nil
                              (interactive)
                              (tlc/org-writing-skeleton)
@@ -3730,12 +3724,12 @@ this project.
 #+begin_src emacs-lisp
   (add-to-list 'org-publish-project-alist
                '("tammymakesthings"
-                   :components 
+                   :components
                     (
-                       "tammymakesthings_posts" 
+                       "tammymakesthings_posts"
                        "tammymakesthings_projects"
                     )
-                  ) 
+                  )
                   t)
   (add-to-list 'org-publish-project-alist
                '("tammymakesthings_posts"
@@ -3916,7 +3910,7 @@ Configure AuCTeX integration.
 
 #+begin_src emacs-lisp
   (eval-after-load "auctex"
-    (progn	
+    (progn
       (setq TeX-auto-save t)
       (setq TeX-parse-self t)
       (setq-default TeX-master nil)
@@ -3969,7 +3963,7 @@ From [[http://ergoemacs.org/emacs/emacs_new_empty_buffer.html][http://ergoemacs.
 
   If the *scratch* buffer doesn't exist, it'll be created. If it does, a new
   buffer of the form untitled-1, Untitled-2, etc. will be created. If the
-  buffer name is not *scratch*, you'll be offered a chance to save it. 
+  buffer name is not *scratch*, you'll be offered a chance to save it.
 
   The optional `location` parameter determines where the new buffer will open.
   If it is set to the value 'frame, the buffer will open in a new frame. If it
@@ -4039,7 +4033,7 @@ This defines a system-specific file by OS type (Windows, Mac, etc.) so
 specific settings can be overridden.
 
 #+begin_src emacs-lisp
-  (let ((system-file (concat user-emacs-directory 
+  (let ((system-file (concat user-emacs-directory
                              "settings-os-" (subst-char-in-string ?/ ?- (symbol-name system-type)) ".el")))
     (if (file-exists-p system-file)
       (load-file system-file)))
@@ -4083,7 +4077,7 @@ specific settings can be overridden.
   (provide 'settings-os-darwin
 #+end_src
 
-*** Load system-specific files 
+*** Load system-specific files
 
 This defines a system-specific file by hostname (work computer, home computer,
 etc). If these are present, the correct one is loaded.

@@ -4088,23 +4088,6 @@ etc). If these are present, the correct one is loaded.
       (load-file system-file)))
 #+end_src
 
-***** System-Specific Settings - Work Laptop
-
-#+begin_src emacs-lisp :tangle settings-system-sl-wl-0010104.el
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; System-specific settings - work laptop (SL-WL-0010104.el)
-  ;; Tangled from init.org - do not modify directly
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-  (setq user-mail-address "tammy.cravit@mindbodyonline.com")
-  (setq user-full-name "Tammy Cravit")
-  (setq user-domain "mindbodyonline.com")
-  (setq user-organisation "Mindbody, Inc.")
-
-  (provide 'settings-system-sl-wl-0010104)
-#+end_src
-
-
 ***** System-Specific Settings - Home Laptop (Lenovo)
 
 #+begin_src emacs-lisp :tangle settings-system-wonderland.el

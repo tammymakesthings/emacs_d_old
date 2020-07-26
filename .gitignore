@@ -6,6 +6,7 @@ auto-save-list/**
 backups/**
 elpa/**
 quelpa/**
+straight/**
 server/**
 themes/**
 transient/**

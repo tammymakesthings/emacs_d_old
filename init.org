@@ -268,7 +268,7 @@ Some extra stuff is needed on MacOS.
 
 #+begin_src emacs-lisp
   (if (eq system-type 'darwin)
-     (straight-use-package 'exec-path-from-shell'))
+     (straight-use-package 'exec-path-from-shell))
 #+end_src
 
 And, now we're ready to install packages.

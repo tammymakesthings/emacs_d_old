@@ -1,7 +1,7 @@
 * -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-07-26 11:56:14 tammy>
+#+DATE: Time-stamp: <2020-07-26 12:12:36 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -275,6 +275,7 @@ And, now we're ready to install packages.
 
 #+begin_src emacs-lisp
 (straight-use-package 'all-the-icons)
+(straight-use-package 'arduino-mode)
 (straight-use-package 'auctex)
 (straight-use-package 'cider)
 (straight-use-package 'cider-hydra)
@@ -2897,8 +2898,6 @@ Mark TODO entries DONE when all subentries are done. From [[https://orgmode.org/
 Define structure templates.
 
 #+begin_src emacs-lisp
-  (require 'org-tempo)
-
   (setq org-structure-template-alist '(
     ("c" . "center")
     ("C" . "comment")

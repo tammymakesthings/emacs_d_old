@@ -245,55 +245,6 @@ Set TLS settings for installations.
            (file-truename (concat invocation-directory "/../etc/cacert.pem")))))
 #+end_src
 
-Load the packaging system and set up repositories.
-
-#+begin_src emacs-lisp
-  (require 'package)
-  (setq package-archives '(
-                          ("elpa"         . "http://tromey.com/elpa/")
-                          ("gnu"          . "http://elpa.gnu.org/packages/")
-                          ("melpa"        . "http://melpa.milkbox.net/packages/")
-                          ("melpa-stable" . "http://stable.melpa.org/packages/")
-                          ("org"          . "https://orgmode.org/elpa/")
-                          ))
-  (add-to-list 'package-pinned-packages '(cider . "melpa-stable") t)
-#+end_src
-
-Now we need to activate packages. Do this first so the packages are
-loaded before we attempt to modify them.
-
-#+begin_src emacs-lisp
-  (package-initialize)
-#+end_src
-
-Download ELPA package descriptions if necessary.
-
-#+begin_src emacs-lisp
-  (when (not package-archive-contents)
-    (package-refresh-contents))
-#+end_src
-
-Bootstrap =use-package=. Package signature checks need to be turned
-off for this because TLS is disabled.
-
-#+begin_src emacs-lisp
-  (setq package-check-signature nil)
-
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package))
-
-  (unless (package-installed-p 'quelpa)
-    (with-temp-buffer
-      (url-insert-file-contents "https://github.com/quelpa/quelpa/raw/master/quelpa.el")
-      (eval-buffer)
-      (quelpa-self-upgrade)))
-  (quelpa
-    '(quelpa-use-package :fetcher git
-                         :url "https://github.com/quelpa/quelpa-use-package.git"))
-(require 'quelpa-use-package)
-#+end_src
-
 Bootstrap the straight package manager.
 
 #+begin_src emacs-lisp
@@ -313,7 +264,14 @@ Bootstrap the straight package manager.
   (load bootstrap-file nil 'nomessage))
 #+end_src
 
-Now let's define the packages we'll need to load from ELPA.
+Some extra stuff is needed on MacOS.
+
+#+begin_src emacs-lisp
+  (if (eq system-type 'darwin)
+     (straight-use-package 'exec-path-from-shell'))
+#+end_src
+
+And, now we're ready to install packages.
 
 #+begin_src emacs-lisp
 (straight-use-package 'all-the-icons)
@@ -348,53 +306,6 @@ Now let's define the packages we'll need to load from ELPA.
 (straight-use-package 'tagedit)
 (straight-use-package 'ts)
 (straight-use-package 'virtualenvwrapper)
-#+end_src
-
-Some extra stuff is needed on MacOS.
-
-#+begin_src emacs-lisp
-  (if (eq system-type 'darwin)
-     (straight-use-package 'exec-path-from-shell'))
-#+end_src
-
-And, now we're ready to install packages.
-
-#+begin_src emacs-lisp
-  (unless (package-installed-p 'quelpa)
-    (with-temp-buffer
-      (url-insert-file-contents "https://github.com/quelpa/quelpa/raw/master/quelpa.el")
-      (eval-buffer)
-      (quelpa-self-upgrade)))
-
-  (require 'quelpa)
-  (quelpa
-    '(quelpa-use-package
-      :fetcher git
-      :url "https://github.com/quelpa/quelpa-use-package.git"))
-
-  (require 'quelpa-use-package)
-
-
-  ; Upgrade packages at most every 7 days
-  (setq quelpa-upgrade-interval 7)
-  (setq auto-package-update-interval 7)
-  (setq auto-package-update-prompt-before-update nil)
-  (setq auto-package-update-delete-old-versions t)
-  (setq auto-package-update-hide-results t)
-
-  (add-hook #'after-init-hook #'quelpa-upgrade-all-maybe)
-  (add-hook #'after-init-hook #'auto-package-update-maybe)
-
-  (use-package bind-key
-               :ensure t
-               :config (add-to-list 'same-window-buffer-names "*Personal Keybindings*"))
-
-  ; Load org-plus-contrib from the orgmode.org elpa repository
-  (use-package org                 :ensure org-plus-contrib)
-  (straight-use-package 'ts                  :ensure t)
-  (straight-use-package 's                   :ensure t)
-  (straight-use-package 'auto-package-update :ensure t)
-  (straight-use-package 'doct)
 
 
   (straight-use-package 'yaml-mode)
@@ -410,10 +321,12 @@ And, now we're ready to install packages.
   (straight-use-package 'python-docstring)
   (straight-use-package 'elpy)
 
+  (straight-use-package 'org-plus-contrib)
   (straight-use-package 'org-super-agenda)
   (straight-use-package 'org-sidebar)
   (straight-use-package 'org-ql)
   (straight-use-package 'noflet)
+  (straight-use-package 'doct)
 #+end_src
 
 *** Shell Integration

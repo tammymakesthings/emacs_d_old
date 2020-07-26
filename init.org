@@ -1,7 +1,7 @@
 * -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-05-14 14:25:05 tammy>
+#+DATE: Time-stamp: <2020-07-26 11:56:14 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -319,7 +319,8 @@ And, now we're ready to install packages.
   (straight-use-package 'pyenv-mode)
   (straight-use-package 'python-black)
   (straight-use-package 'python-docstring)
-  (straight-use-package 'elpy)
+;  (straight-use-package 'elpy)
+  (straight-use-package 'pythonic)
 
   (straight-use-package 'org-plus-contrib)
   (straight-use-package 'org-super-agenda)

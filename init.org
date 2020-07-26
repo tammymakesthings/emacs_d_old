@@ -1,7 +1,7 @@
 * -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-07-26 12:12:36 tammy>
+#+DATE: Time-stamp: <2020-07-26 12:23:59 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -2550,7 +2550,7 @@ define helpers for accessing entries in this list.
 Define our templates for =org-capture=. There are lots of them.
 
 #+begin_src emacs-lisp
-  (use-package org-chef :ensure t)
+;  (use-package org-chef :ensure t)
 
   ;; (defun tlc/maybe-wrap-quotes (content &optional wrap-type)
   ;;   "Wrap quoted text if provided."

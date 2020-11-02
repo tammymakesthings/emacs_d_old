@@ -1,4 +1,0 @@
-[submodule "projects/org-close-out-day"]
-	path = projects/org-close-out-day
-	url = git@github.com:tammymakesthings/org-close-out-day.git
-	update = rebase

@@ -1,7 +1,7 @@
 * -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-07-26 12:23:59 tammy>
+#+DATE: Time-stamp: <2020-08-10 19:07:53 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -577,15 +577,11 @@ Load the [[https://github.com/hlissner/emacs-doom-themes][doom-themes]] system i
               (load-theme 'doom-challenger-deep t)
               (doom-themes-visual-bell-config)
               (doom-themes-org-config)
-              (set-face-foreground 'org-hide "1e1c31")
-              (set-face-background 'org-hide "1e1c31")
               )
             (progn
               (load-theme 'doom-palenight t)
               (doom-themes-visual-bell-config)
               (doom-themes-org-config)
-              (set-face-foreground 'org-hide "1c1f28")
-              (set-face-background 'org-hide "1c1f28")
             ))
 
         (setq nlinum-highlight-current-line t)
@@ -622,7 +618,7 @@ The first one of these that's found will be used.
          ((find-font (font-spec :name "Cascadia Code PL"))
           (progn
             (setq tlc/frame-font-face "Cascadia Code PL")
-            (setq tlc/frame-font-size 130)))
+            (setq tlc/frame-font-size 140)))
          ((find-font (font-spec :name "Source Code Pro"))
           (progn
             (setq tlc/frame-font-face "Source Code Pro")
@@ -1480,15 +1476,6 @@ Set org indent settings.
   (setq org-odd-levels-only t)
   (setq org-adapt-indentation t)
   (setq org-indent-indentation-per-level 2)
-
-  (defface org-hide
-    '((((background light)) (:foreground "1c1f28"))
-    (((background dark)) (:foreground "1c1f28")))
-    "Face used to hide leading stars in headlines.
-    The foreground color of this face should be
-    equal to the background color of the frame."
-    :group 'org-faces)
-
 #+end_src
 
 Enforce dependencies on TODOs and checkbox lists - the parent cannot be marked
@@ -3982,12 +3969,7 @@ specific settings can be overridden.
   ;; Tangled from init.org - do not modify directly
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (use-package exec-path-from-shell
-               :if (memq window-system '(mac ns))
-               :ensure t
-               :config (exec-path-from-shell-initialize))
-
-  (provide 'settings-os-darwin
+  (provide 'settings-os-darwin)
 #+end_src
 
 *** Load system-specific files

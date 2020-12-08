@@ -1,7 +1,7 @@
-* -*- mode: org; fill-column: 78; -*-
+ -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-08-10 19:07:53 tammy>
+#+DATE: Time-stamp: <2020-12-04 14:42:03 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -213,6 +213,14 @@ it. However, I do make the following assumptions:
 
 #+end_src
 
+Disable checking shell startup files for PATH and MANPATH settings. This
+suppresses some spurious errors.
+
+#+begin_src emacs-lisp
+  (custom-set-variables 
+    '(exec-path-from-shell-check-startup-files nil))
+#+end_src
+
 On Windows, Emacs starts up in the wrong directory. Fix that before we
 get too much farther.
 
@@ -307,28 +315,32 @@ And, now we're ready to install packages.
 (straight-use-package 'tagedit)
 (straight-use-package 'ts)
 (straight-use-package 'virtualenvwrapper)
+(straight-use-package 'yaml-mode)
+(straight-use-package 'spice-mode)
 
-
-  (straight-use-package 'yaml-mode)
-  (straight-use-package 'spice-mode)
-
-  (straight-use-package 'py-test)
-  (straight-use-package 'pyenv-mode-auto)
-  (straight-use-package 'pylint)
-  (straight-use-package 'py-autopep8)
-  (straight-use-package 'pydoc)
-  (straight-use-package 'pyenv-mode)
-  (straight-use-package 'python-black)
-  (straight-use-package 'python-docstring)
+(straight-use-package 'py-test)
+(straight-use-package 'pyenv-mode-auto)
+(straight-use-package 'pylint)
+(straight-use-package 'py-autopep8)
+(straight-use-package 'pydoc)
+(straight-use-package 'pyenv-mode)
+(straight-use-package 'python-black)
+(straight-use-package 'python-docstring)
 ;  (straight-use-package 'elpy)
-  (straight-use-package 'pythonic)
+(straight-use-package 'pythonic)
 
-  (straight-use-package 'org-plus-contrib)
-  (straight-use-package 'org-super-agenda)
-  (straight-use-package 'org-sidebar)
-  (straight-use-package 'org-ql)
-  (straight-use-package 'noflet)
-  (straight-use-package 'doct)
+(straight-use-package 'org-plus-contrib)
+(straight-use-package 'org-super-agenda)
+(straight-use-package 'org-sidebar)
+(straight-use-package 'org-ql)
+(straight-use-package 'noflet)
+(straight-use-package 'doct)
+
+(straight-use-package 'fsharp-mode)
+
+(straight-use-package 'swift-mode)
+(straight-use-package 'swift-helpful)
+(straight-use-package 'swift-playground-mode)
 #+end_src
 
 *** Shell Integration
@@ -611,22 +623,22 @@ The first one of these that's found will be used.
   (if window-system
       (progn
         (cond
-         ((find-font (font-spec :name "JetBrains Mono"))
-          (progn
-            (setq tlc/frame-font-face "JetBrains Mono")
-            (setq tlc/frame-font-size 110)))
+         ;; ((find-font (font-spec :name "JetBrains Mono"))
+         ;;  (progn
+         ;;    (setq tlc/frame-font-face "JetBrains Mono")
+         ;;    (setq tlc/frame-font-size 110)))
          ((find-font (font-spec :name "Cascadia Code PL"))
           (progn
             (setq tlc/frame-font-face "Cascadia Code PL")
-            (setq tlc/frame-font-size 140)))
-         ((find-font (font-spec :name "Source Code Pro"))
-          (progn
-            (setq tlc/frame-font-face "Source Code Pro")
-            (setq tlc/frame-font-size 120)))
-         ((find-font (font-spec :name "Fira Code"))
-          (progn
-            (setq tlc/frame-font-face "Fira Code")
-            (setq tlc/frame-font-size 120)))
+            (setq tlc/frame-font-size 150)))
+         ;; ((find-font (font-spec :name "Source Code Pro"))
+         ;;  (progn
+         ;;    (setq tlc/frame-font-face "Source Code Pro")
+         ;;    (setq tlc/frame-font-size 120)))
+         ;; ((find-font (font-spec :name "Fira Code"))
+         ;;  (progn
+         ;;    (setq tlc/frame-font-face "Fira Code")
+         ;;    (setq tlc/frame-font-size 120)))
          )
 
         (if (and tlc/frame-font-face tlc/frame-font-size)

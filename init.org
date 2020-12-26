@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-12-04 14:42:03 tammy>
+#+DATE: Time-stamp: <2020-12-26 10:54:47 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -586,14 +586,14 @@ Load the [[https://github.com/hlissner/emacs-doom-themes][doom-themes]] system i
         (setq doom-themes-enable-italic t)
         (if window-system
             (progn
-              (load-theme 'doom-challenger-deep t)
+              (load-theme 'doom-fairy-floss t)
               (doom-themes-visual-bell-config)
               (doom-themes-org-config)
               )
-            (progn
-              (load-theme 'doom-palenight t)
-              (doom-themes-visual-bell-config)
-              (doom-themes-org-config)
+          (progn
+            (load-theme 'doom-fairy-floss t)
+            (doom-themes-visual-bell-config)
+            (doom-themes-org-config)
             ))
 
         (setq nlinum-highlight-current-line t)

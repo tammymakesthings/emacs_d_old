@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2020-12-26 10:54:47 tammy>
+#+DATE: Time-stamp: <2021-08-11 09:04:52 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -25,7 +25,7 @@ The master source for this file is [[https://github.com/tammymakesthings/emacs_d
 #+begin_src emacs-lisp :tangle yes
    ;;; -*- mode: emacs-lisp; lexical-binding: t -*-
    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-   ;;;; Emacs Configuration - Tammy Cravit
+   ;;;; Emacs Configuration - Tammy Cravit - tammymakesthings@gmail.com
    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
    ;;;; THIS FILE IS AUTO-GENERATED FROM init.org AND IS REGENERATED EVERY TIME
    ;;;; THAT FILE IS SAVED. DO NOT MAKE ANY MODIFICATIONS TO THIS FILE, OR THEY
@@ -165,6 +165,7 @@ it. However, I do make the following assumptions:
 ******* [[*Lisp][Lisp]]
 ******* [[*Smalltalk][Smalltalk]]
 ******* [[*YAML][YAML]]
+******* [[*OCAML][OCAML]]
 ***** [[*Gnus][Gnus]]
 ***** [[*Org Mode][Org Mode]]
 ******* [[*Loading Org Mode][Loading Org Mode]]
@@ -217,8 +218,15 @@ Disable checking shell startup files for PATH and MANPATH settings. This
 suppresses some spurious errors.
 
 #+begin_src emacs-lisp
-  (custom-set-variables 
+  (custom-set-variables
     '(exec-path-from-shell-check-startup-files nil))
+#+end_src
+
+Fix some exec-path-from-shell settings that produce spurious errors.
+
+#+begin_src emacs-lisp
+  (custom-set-variables
+    '(exec-path-from-shell-warn-duration-millis 30000))
 #+end_src
 
 On Windows, Emacs starts up in the wrong directory. Fix that before we
@@ -282,9 +290,11 @@ Some extra stuff is needed on MacOS.
 And, now we're ready to install packages.
 
 #+begin_src emacs-lisp
+(straight-use-package 'flycheck)
 (straight-use-package 'all-the-icons)
 (straight-use-package 'arduino-mode)
 (straight-use-package 'auctex)
+(straight-use-package 'caml-mode)
 (straight-use-package 'cider)
 (straight-use-package 'cider-hydra)
 (straight-use-package 'clojure-mode)
@@ -313,6 +323,7 @@ And, now we're ready to install packages.
 (straight-use-package 'smalltalk-mode)
 (straight-use-package 'smex)
 (straight-use-package 'tagedit)
+(straight-use-package 'tuareg)
 (straight-use-package 'ts)
 (straight-use-package 'virtualenvwrapper)
 (straight-use-package 'yaml-mode)
@@ -329,7 +340,7 @@ And, now we're ready to install packages.
 ;  (straight-use-package 'elpy)
 (straight-use-package 'pythonic)
 
-(straight-use-package 'org-plus-contrib)
+(straight-use-package 'org)
 (straight-use-package 'org-super-agenda)
 (straight-use-package 'org-sidebar)
 (straight-use-package 'org-ql)
@@ -1235,7 +1246,12 @@ Emacs does Lisp coding very well, obviously, but we still need to load
     (progn
       (setenv "SBCL_HOME" "c:/sbcl")
       (setq inferior-lisp-program "c:/sbcl/sbcl.exe")))
-   (t (setq inferior-lisp-program "sbcl")))
+   (t (progn
+        (if (file-exists-p (expand-file-name "~/.roswell/helper.el"))
+            (progn
+              (load (expand-file-name "~/.roswell/helper.el"))
+              (setq inferior-lisp-program "ros -Q run"))
+          (setq inferior-lisp-program "sbcl")))))
 #+end_src
 
 If we have [[https://www.quicklisp.org/beta/][Quicklisp]] installed, we also need to load the Quicklisp
@@ -1265,6 +1281,134 @@ Emacs smalltalk-mode customizations.
   (add-to-list 'auto-mode-alist '("\\.yml$" . yaml-mode))
 #+end_src
 
+***** OCAML
+
+#+begin_src emacs-lisp
+  ;; Base configuration for OPAM
+
+  (add-to-list 'load-path (expand-file-name "~/.opam/4.11.1/share/emacs/site-lisp/"))
+
+  (defun opam-shell-command-to-string (command)
+    "Similar to shell-command-to-string, but returns nil unless the process
+    returned 0, and ignores stderr (shell-command-to-string ignores return value)"
+    (let* ((return-value 0)
+           (return-string
+            (with-output-to-string
+              (setq return-value
+                    (with-current-buffer standard-output
+                      (process-file shell-file-name nil '(t nil) nil
+                                    shell-command-switch command))))))
+      (if (= return-value 0) return-string nil)))
+
+  (defun opam-update-env (switch)
+    "Update the environment to follow current OPAM switch configuration"
+    (interactive
+     (list
+      (let ((default
+              (car (split-string (opam-shell-command-to-string "opam switch show --safe")))))
+        (completing-read
+         (concat "opam switch (" default "): ")
+         (split-string (opam-shell-command-to-string "opam switch list -s --safe") "\n")
+         nil t nil nil default))))
+    (let* ((switch-arg (if (= 0 (length switch)) "" (concat "--switch " switch)))
+           (command (concat "opam config env --safe --sexp " switch-arg))
+           (env (opam-shell-command-to-string command)))
+      (when (and env (not (string= env "")))
+        (dolist (var (car (read-from-string env)))
+          (setenv (car var) (cadr var))
+          (when (string= (car var) "PATH")
+            (setq exec-path (split-string (cadr var) path-separator)))))))
+
+  (opam-update-env nil)
+
+  (defvar opam-share
+    (let ((reply (opam-shell-command-to-string "opam config var share --safe")))
+      (when reply (substring reply 0 -1))))
+
+  (add-to-list 'load-path (concat opam-share "/emacs/site-lisp"))
+  ;; OPAM-installed tools automated detection and initialisation
+
+  (defun opam-setup-tuareg ()
+    (add-to-list 'load-path (concat opam-share "/tuareg") t)
+    (load "tuareg-site-file"))
+
+  (defun opam-setup-add-ocaml-hook (h)
+    (add-hook 'tuareg-mode-hook h t)
+    (add-hook 'caml-mode-hook h t))
+
+  (defun opam-setup-complete ()
+    (if (require 'company nil t)
+      (opam-setup-add-ocaml-hook
+        (lambda ()
+           (company-mode)
+           (defalias 'auto-complete 'company-complete)))
+      (require 'auto-complete nil t)))
+
+  (defun opam-setup-ocp-indent ()
+    (opam-setup-complete)
+    (autoload 'ocp-setup-indent "ocp-indent" "Improved indentation for Tuareg mode")
+    (autoload 'ocp-indent-caml-mode-setup "ocp-indent" "Improved indentation for Caml mode")
+    (add-hook 'tuareg-mode-hook 'ocp-setup-indent t)
+    (add-hook 'caml-mode-hook 'ocp-indent-caml-mode-setup  t))
+
+  (defun opam-setup-ocp-index ()
+    (autoload 'ocp-index-mode "ocp-index" "OCaml code browsing, documentation and completion based on build artefacts")
+    (opam-setup-add-ocaml-hook 'ocp-index-mode))
+
+  (defun opam-setup-merlin ()
+    (opam-setup-complete)
+    (require 'merlin)
+    (opam-setup-add-ocaml-hook 'merlin-mode)
+
+    (defcustom ocp-index-use-auto-complete nil
+      "Use auto-complete with ocp-index (disabled by default by opam-user-setup because merlin is in use)"
+      :group 'ocp_index)
+    (defcustom merlin-ac-setup 'easy
+      "Use auto-complete with merlin (enabled by default by opam-user-setup)"
+      :group 'merlin-ac)
+
+    ;; So you can do it on a mac, where `C-<up>` and `C-<down>` are used
+    ;; by spaces.
+    (define-key merlin-mode-map
+      (kbd "C-c <up>") 'merlin-type-enclosing-go-up)
+    (define-key merlin-mode-map
+      (kbd "C-c <down>") 'merlin-type-enclosing-go-down)
+    (set-face-background 'merlin-type-face "skyblue"))
+
+  (defun opam-setup-utop ()
+    (autoload 'utop "utop" "Toplevel for OCaml" t)
+    (autoload 'utop-minor-mode "utop" "Minor mode for utop" t)
+    (add-hook 'tuareg-mode-hook 'utop-minor-mode))
+
+  (defvar opam-tools
+    '(("tuareg" . opam-setup-tuareg)
+      ("ocp-indent" . opam-setup-ocp-indent)
+      ("ocp-index" . opam-setup-ocp-index)
+      ("merlin" . opam-setup-merlin)
+      ("utop" . opam-setup-utop)))
+
+  (defun opam-detect-installed-tools ()
+    (let*
+        ((command "opam list --installed --short --safe --color=never")
+         (names (mapcar 'car opam-tools))
+         (command-string (mapconcat 'identity (cons command names) " "))
+         (reply (opam-shell-command-to-string command-string)))
+      (when reply (split-string reply))))
+
+  (defvar opam-tools-installed (opam-detect-installed-tools))
+
+  (defun opam-auto-tools-setup ()
+    (interactive)
+    (dolist (tool opam-tools)
+      (when (member (car tool) opam-tools-installed)
+       (funcall (symbol-function (cdr tool))))))
+
+  (opam-auto-tools-setup)
+
+  (setq tuareg-indent-align-with-first-arg t)
+  (setq tuareg-match-patterns-aligned t)
+#+end_src
+
 *** Gnus
 
 Gnus setup is tangled to =dot-gnus.el=, which is moved to =~/.gnus.el= by the
@@ -1291,6 +1435,36 @@ file save hook.
     (turn-on-auto-fill))
   (add-hook 'message-mode-hook 'my-message-mode-setup)
 #+end_src
+
+*** Muse Mode
+
+#+begin_src emacs-lisp :tangle yes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Muse Mode
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#+end_src
+
+Load the Muse mode stuff.
+
+#+begin_src emacs-lisp :tangle yes
+  (require 'muse-mode)
+
+  (require 'muse-html)
+  (require 'muse-latex)
+  (require 'muse-texinfo)
+  (require 'muse-project)
+
+  (setq muse-project-alist
+    '(
+      ("Code Library"
+       ("~/projects/muse-codelib" :default "index")
+       (:base "html" :path "~/projects/muse-codelib/html")
+       (:base "pdf"  :path "~/projects/muse-codelib/pdf")
+       )
+    ))
+#+end_src
+
 
 *** Org Mode
 
@@ -1321,9 +1495,6 @@ of other stuff. As you'll see, it's VERY customizable.
     (require 'org-inlinetask)
     (require 'org-mouse)
     (require 'org-protocol)
-    (require 'org-collector)
-    (require 'org-depend)
-    (require 'org-checklist)
 #+end_src
 
 Load org-babel (code) extensions for languages we use.
@@ -1347,8 +1518,6 @@ Load org-babel (code) extensions for languages we use.
       (eshell . t)
       (gnuplot . t)
       (clojure . t)
-      (clojure-literate . t)
-      (spice . t)
       (sql . t)
      )
     )
@@ -3675,7 +3844,7 @@ this project.
 
 Set up org taskjuggler integrations.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (require 'ox-taskjuggler)
 
   (setq org-taskjuggler-keep-project-as-task nil)
@@ -3684,7 +3853,7 @@ Set up org taskjuggler integrations.
 
 Set up the org-mode tags we'll use to identify our project plan sections.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (setq org-taskjuggler-project-tag "taskjuggler_project")
   (setq org-taskjuggler-resource-tag "taskjuggler_resource")
   (setq org-export-taskjuggler-report-tag "taskjuggler_report")
@@ -3705,14 +3874,14 @@ Set up the org-mode tags we'll use to identify our project plan sections.
 We pull in the default reports from an include file rather than hard-coding
 them.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (setq org-taskjuggler-default-reports '("include \"reports.tji\""))
 #+end_src
 
 Build a hook to allow adding content to the generated TaskJuggler file after
 generation.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
       (defvar tlc/taskjuggler-prologue-includes nil
         "Files to include at the start of TJ files")
       (defvar tlc/taskjuggler-project-includes nil
@@ -3796,7 +3965,7 @@ generation.
 #+end_src
 
 Add some additional attributes to the exporter.
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (add-to-list 'org-taskjuggler-valid-resource-attributes 'include)
   (add-to-list 'org-taskjuggler-valid-resource-attributes 'shifts)
   (add-to-list 'org-taskjuggler-valid-task-attributes 'include)

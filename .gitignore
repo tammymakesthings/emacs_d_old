@@ -23,4 +23,4 @@ settings-*.el
 diary
 ob-text.el
 org-archive-subtree-hierarchical.el
-
+opam-user-setup.el

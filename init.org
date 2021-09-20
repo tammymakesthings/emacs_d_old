@@ -1,7 +1,7 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2021-08-12 09:37:23 tammy>
+#+DATE: Time-stamp: <2021-09-20 09:25:20 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -148,7 +148,7 @@ it. However, I do make the following assumptions:
    versions of Emacs because of the [[https://github.com/tumashu/posframe][posframe]] library's dependencies.
 2. You have [[https://git-scm.com/][Git]] installed, and the =git= executable is in your path.
 
-* Emacs Configuration
+* Emacs Configurationor
 *** Index
 ***** [[*Preliminaries][Preliminaries]]
 ***** [[*Package Installation][Package Installation]]
@@ -597,12 +597,12 @@ Load the [[https://github.com/hlissner/emacs-doom-themes][doom-themes]] system i
         (setq doom-themes-enable-italic t)
         (if window-system
             (progn
-              (load-theme 'doom-fairy-floss t)
+              (load-theme 'doom-nord t)
               (doom-themes-visual-bell-config)
               (doom-themes-org-config)
               )
           (progn
-            (load-theme 'doom-fairy-floss t)
+            (load-theme 'doom-nord t)
             (doom-themes-visual-bell-config)
             (doom-themes-org-config)
             ))
@@ -689,7 +689,7 @@ window maximized.
       (if (and (eq tlc/number-of-displays 1) (eq system-type 'windows-nt))
           ;; One monitor - make the window shorter and mazimize it
           (setq initial-frame-alist '((top . 5) (left . 5) (width . 132)
-                                      (height . 28)
+                                      (height . 32)
                                       (fullscreen . maximized)))
         ;; Multiple monitors - taller window, not maximized
         (setq initial-frame-alist '((top . 15) (left . 15)
@@ -1524,7 +1524,7 @@ Load org-babel (code) extensions for languages we use.
 #+begin_src emacs-lisp
   (require 'ob-core)
   (require 'ob-eval)
-
+  
   (org-babel-do-load-languages
     'org-babel-load-languages
     '((dot . t)
@@ -1541,6 +1541,11 @@ Load org-babel (code) extensions for languages we use.
       (gnuplot . t)
       (clojure . t)
       (sql . t)
+      (haskell . t)
+      (ocaml . t)
+      (lisp . t)
+      (org . t)
+      (arduino . t)
      )
     )
 #+end_src
@@ -1549,17 +1554,18 @@ Since version 8, Org uses a modular exporter. Load the exporter pieces
 we need.
 
 #+begin_src emacs-lisp :tangle no
-   (require 'ox-publish)
-   (require 'ox-html)
-   (require 'ox-latex)
-   (require 'ox-ascii)
-   (require 'ox-md)
-   (require 'ox-man)
-   (require 'ox-org)
+  (require 'ox-publish)
+  (require 'ox-html)
+  (require 'ox-latex)
+  (require 'ox-ascii)
+  (require 'ox-md)
+  (require 'ox-man)
+  (require 'ox-org)
+  (require 'ox-texinfo)
 #+end_src
 
 #+begin_src emacs-lisp
-(setq org-export-backends '(org latex taskjuggler publish html ascii md))
+(setq org-export-backends '(org latex taskjuggler publish html ascii md texinfo))
 #+end_src
 
 ***** Org Text Export
@@ -1583,7 +1589,6 @@ Create the hack file.
   ;; Package-Requires: ((org "8"))
   ;
   ;;; Commentary:
-  ;;
   ;; Supports tangling literal text blocks from Org files.
 
   (require 'org)
@@ -1668,7 +1673,7 @@ it.
 Set the default notes file.
 
 #+begin_src emacs-lisp
-  (setq org-default-notes-file (file-truename (concat org-directory "/master.org")))
+  (setq org-default-notes-file (file-truename (concat org-directory "/codex.org")))
 #+end_src
 
 Set org indent settings.
@@ -1732,7 +1737,7 @@ Setup =org-ctags=.
         (progn
           (if (eq system-type 'windows-nt)
               (setq org-ctags-path-to-ctags "c:/utils/ctags.exe")
-            (setq org-ctags-path-to-ctags "/usr/bin/ctags"))
+            (setq org-ctags-path-to-ctags "/usr/local/bin/ctags"))
           (add-hook 'org-mode-hook
                     (lambda ()
                       (define-key org-mode-map "\C-co" 'org-ctags-find-tag-interactive)))
@@ -1795,36 +1800,42 @@ org lists.
 Define a function to open our most used files with a keystroke.
 
 #+begin_src emacs-lisp
-
-  (defvar tlc/org-master-files nil
+  
+  (defvar tlc/org-master-files '(
+                                 "inbox.org"
+                                 "work.org"
+                                 "personal.org"
+                                 "someday.org")
     "List of files for tlc/open-org-files to open.
-
-    File names are relative to org-directory.")
-
+  
+        File names are relative to org-directory.")
+  
+  (defvar tlc/default-master-file
+    (cond
+     ((bound-and-true-p tlc/org-master-files) (nth 0 tlc/org-master-files))
+     (t "inbox.org"))
+    "Defines the default master file to switch to when tlc/open-org-files runs.")
+  
   (defun tlc/open-org-files ()
     "Open the default set of org files.
-
-    The default set of org files is specified by tlc/org-master-files."
+  
+        The default set of org files is specified by tlc/org-master-files."
     (interactive)
-
+  
     (let ((default-directory org-directory))
       (shell-command "git pull"))
-
+  
     (if (length tlc/org-master-files)
         (progn
           (let (value)
             (dolist (elt tlc/org-master-files value)
               (find-file-noselect (concat org-directory "/" elt))))
-          (switch-to-buffer "master.org"))
+          (switch-to-buffer tlc/default-master-file))
       (message "Add your master org files to tlc/org-master-files and try again")))
-
-    (setq tlc/org-master-files '(
-                                 "master.org"
-                                 "proj_eos.org"
-                                 "codex.org"))
-
-    (global-set-key (kbd "<f12>") 'tlc/open-org-files)
-    (global-set-key "\C-c=" 'tlc/open-org-files)
+  
+  (setq tlc/default-master-file "work.org")
+  (global-set-key (kbd "<f12>") 'tlc/open-org-files)
+  (global-set-key "\C-c=" 'tlc/open-org-files)
 #+end_src
 
 ***** General Helper Functions
@@ -1921,6 +1932,7 @@ From [[https://orgmode.org/worg/org-hacks.html][here]].
   (global-set-key "\C-c/" 'org-agenda-list)
 
   (define-key org-mode-map "\C-cp" 'org-insert-property-drawer)
+  (define-key org-mode-map "C-c C-/" 'tlc/org-add-folded-property)
   (define-key org-mode-map "\C-cf" 'tlc/org-add-folded-property)
   (define-key org-mode-map (kbd "<f4>") 'org-table-recalculate-buffer-tables)
 
@@ -2106,7 +2118,7 @@ Set general org-agenda options.
   (setq org-agenda-skip-scheduled-if-done t)
   (setq org-agenda-skip-archived-trees t)1
   (setq org-agenda-skip-deadline-if-done t)
-  (setq org-agenda-include-all-todo t)
+;  (setq org-agenda-include-all-todo t)
   (setq org-agenda-include-diary t)
   (setq org-agenda-tags-todo-honor-ignore-options t)
   (setq org-agenda-todo-list-sublevels nil)
@@ -2200,7 +2212,7 @@ lookups from the ~known-locations-alist~ alist.
   (defun org-lunar-phases ()
     "Show lunar phase in Agenda buffer."
     (require 'lunar)
-    (let* ((phase-list (lunar-phase-list (nth 0 date) (nth 2 date)))
+   (let* ((phase-list (lunar-phase-list (nth 0 date) (nth 2 date)))
            (phase (cl-find-if (lambda (phase) (equal (car phase) date))
                               phase-list)))
       (when phase
@@ -2235,36 +2247,32 @@ agendas (defined in =org-agenda-custom-commands=) are automatically filtered.
   (defvar tlc/org-work-agenda-files nil "Work agenda files for filtered views.")
   (defvar tlc/org-personal-project-files nil "Personal projects to include in agenda.")
   (defvar tlc/org-work-project-files nil "Work projects to include in agenda.")
-
+  
   (setq tlc/org-personal-project-files (list
-                                    ;  (concat org-directory "/proj_pmp_certification.org")
-                                    ;  (concat org-directory "/proj_college.org")
                                       (concat org-directory "/proj_transformation_2e.org")
                                       (concat org-directory "/proj_az_mystery_1.org")
                                       ))
-
-  (setq tlc/org-work-project-files (list
-                                    (concat org-directory "/proj_eos.org")
-                                    (concat org-directory "/proj_rfi_process.org")
-                                    (concat org-directory "/proj_cm_sharepoint.org")
-                                    (concat org-directory "/proj_collab_requests.org")
-                                    ))
-
+  
+  (setq tlc/org-work-project-files nil)
+  
   (setq tlc/org-personal-agenda-files (cl-union
                                        (list
                                         (concat org-directory "/calls.org")
                                         (concat org-directory "/personal.org"))
                                       tlc/org-personal-project-files))
-
+  
   (setq tlc/org-work-agenda-files (cl-union
                                    (list
+                                    (concat org-directory "/work.org")
                                     (concat org-directory "/master.org")
-                                    (concat org-directory "/mb_outlook.org")
                                     (concat org-directory "/calls.org"))
                                    tlc/org-work-project-files))
-
-;  (setq org-agenda-files (cl-union tlc/org-personal-agenda-files tlc/org-work-agenda-files))
-  (setq org-agenda-files tlc/org-personal-agenda-files)
+  
+  (setq org-agenda-files (cl-remove-if-not 
+                          'file-exists-p 
+                          (append 
+                           tlc/org-personal-agenda-files 
+                           tlc/org-work-agenda-files)))
 #+end_src
 
 Helper function for =org-agenda-custom-commands= to skip a subtree if
@@ -2447,7 +2455,7 @@ Define the default set of tags.
   (setq org-tag-alist
         (quote (
                 (:startgroup)
-                ("PROJECT" . ?p) ("EOS" . ?e ) ("WORK" . ?w) ("LEARNING" . ?l) ("PERSONAL" . ?p)
+                ("PROJECT" . ?p) ("WORK" . ?w) ("LEARNING" . ?l) ("PERSONAL" . ?p)
                 (:endgroup)
                 ("FLAGGED" . ?f)
                 (:startgroup)
@@ -2466,7 +2474,6 @@ Define font faces for tags.
         (quote
          (
           ("PROJECT"    :foreground "forest green"        :weight bold :slant normal  :underline nil)
-          ("EOS"        :foreground "gold"                :weight bold :slant normal  :underline t)
           ("LEARNING"   :foreground "medium spring green" :weight bold :slant normal  :underline nil)
           ("PERSONAL"   :foreground "medium slate blue"   :weight bold :slant normal  :underline nil)
           ("FLAGGED"    :foreground "deep pink"           :weight bold :slant oblique :underline t)
@@ -2486,8 +2493,7 @@ Define the default set of TODO states.
 #+begin_src emacs-lisp
   (setq org-todo-keywords
         '(
-           (sequence "TODO(t)" "NEXT(n)" "DOING(d)" "WAITING(w@/!)" "DELEGATED(l@/!)" "|" "DONE(x!)" "CANCELED(c@/!)" "FORWARD(f)")
-           (sequence "DRAFTING(1)" "REVIEW(2)" "PENDING(3@/!)" "UPLOADED(4)" "|" "SENT(5)")
+           (sequence "TODO(t)" "NEXT(n)" "DOING(d)" "WAITING(w@/!)" "DELEGATED(l@/!)" "|" "DONE(x!)" "CANCELLED(c@/!)" "FORWARD(f)")
           ))
 #+end_src
 
@@ -2495,50 +2501,34 @@ Define font faces for todo keyword states.
 
 #+begin_src emacs-lisp
   (setq org-todo-keyword-faces
-        (quote (
-                ;; Colors for the standard TODOs sequence
-                ("TODO"       :foreground "red"
-                              :background "#1E1C31"
-                              :weight bold :slant normal  :underline nil :overline nil)
-                ("NEXT"       :foreground "cyan"
-                              :background "#1E1C31"
-                              :weight bold :slant normal  :underline nil :overline nil)
-                ("DOING"      :foreground "forest green"
-                              :background "#1E1C31"
-                              :weight bold :slant normal  :underline t   :overline nil)
-                ("WAITING"    :foreground "orange"
-                              :background "#1E1C31"
-                              :weight bold :slant oblique :underline nil :overline nil)
-                ("DELEGATED"  :foreground "orange"
-                              :background "#1E1C31"
-                              :weight bold :slant oblique :underline nil :overline nil)
-                ("DONE"       :foreground "dark slate gray"
-                              :background "#1E1C31"
-                              :weight bold :slant normal  :underline nil :overline nil)
-                ("CANCELED"   :foreground "forest green"
-                              :background "#1E1C31"
-                              :weight bold :slant normal  :underline nil :overline nil)
-                ("FORWARD"    :foreground "dim gray"
-                              :background "#1E1C31"
-                              :weight bold :slant normal  :underline nil :overline nil)
-
-                ;; Colors for the SOW workflow TODOs seqence
-                ("DRAFTING"   :foreground "turquoise2"
-                              :background "#1E1C31"
-                              :weight bold :slant oblique :underline nil :overline nil)
-                ("REVIEW"     :foreground "DarkGoldenrod2"
-                              :background "#1E1C31"
-                              :weight bold :slant oblique :underline nil :overline nil)
-                ("PENDING"    :foreground "orange"
-                              :background "#1E1C31"
-                              :weight bold :slant oblique :underline nil :overline nil)
-                ("UPLOADED"   :foreground "IndianRed1"
-                              :background "#1E1C31"
-                              :weight bold :slant oblique :underline nil :overline nil)
-                ("SENT"       :foreground "dark slate gray"
-                              :background "#1E1C31"
-                              :weight bold :slant normal  :underline nil :overline nil)
-                )))
+        (quote 
+         (
+          ;; Colors for the standard TODOs sequence
+          ("TODO"       :foreground "red"
+           :background "#1E1C31"
+           :weight bold :slant normal  :underline nil :overline nil)
+          ("NEXT"       :foreground "cyan"
+           :background "#1E1C31"
+           :weight bold :slant normal  :underline nil :overline nil)
+          ("DOING"      :foreground "forest green"
+           :background "#1E1C31"
+           :weight bold :slant normal  :underline t   :overline nil)
+          ("WAITING"    :foreground "orange"
+           :background "#1E1C31"
+           :weight bold :slant oblique :underline nil :overline nil)
+          ("DELEGATED"  :foreground "orange"
+           :background "#1E1C31"
+           :weight bold :slant oblique :underline nil :overline nil)
+          ("DONE"       :foreground "dark slate gray"
+           :background "#1E1C31"
+           :weight bold :slant normal  :underline nil :overline nil)
+          ("CANCELLED"   :foreground "forest green"
+           :background "#1E1C31"
+           :weight bold :slant normal  :underline nil :overline nil)
+          ("FORWARD"    :foreground "dim gray"
+           :background "#1E1C31"
+           :weight bold :slant normal  :underline nil :overline nil)
+          )))
 #+end_src
 
 ***** Org Source Color Theme
@@ -2700,42 +2690,28 @@ define helpers for accessing entries in this list.
       '((0 . nil) (1 . nil) (2 . nil) (3 . nil) (4 . nil) (5 . nil) (6 . nil))
       "A list of day-specific tasks for each day of the week. Used by the
     org-today-entry capture template.
-
+  
     The car of each item in the list is a DOW number (as found in the 6th element of
     the list returned by parse-time-string.
-
+  
     The cdr of these elements is a list of todo entries. These will
     be inserted into the Tasks section of the entry created by
     tlc/org-today-entry. You can set those manually or using the
     shortcut helper function tlc/set-org-dow-tasks.")
-
+  
     (defun tlc/set-org-dow-tasks (dow tasklist)
       "Helper to set tlc/org-dow-tasks. See the documentation for
     tlc/org-dow-tasks for details."
       (if (and (>= dow 0) (<= dow 6))
           (setcdr (assq dow tlc/org-dow-tasks) tasklist)
         (message "tlc/set-org-dow-tasks: dow must be between 0 and 6")))
-
+  
   (defun tlc/org-today-entry-daily-tasks nil
     (interactive)
     (string-join
      (cdr (assoc (nth 6 (parse-time-string (current-time-string))) tlc/org-dow-tasks))
      "\n******* TODO"))
-
-  (tlc/set-org-dow-tasks 0 '(
-                            "TODO Weekly Review"
-                            "TODO Check in on SpringCM Activity"
-                            "TODO Update SOW tracker with weekend activity"
-                            ))
-
-  (tlc/set-org-dow-tasks 4 '(
-                             "TODO Update EOS Track Status Report"
-                             ))
-
-  (tlc/set-org-dow-tasks 5 '(
-                             "TODO Send weekly SOW charges to FinAct"
-                            ))
-#+end_src
+  #+end_src
 
 Define our templates for =org-capture=. There are lots of them.
 
@@ -2759,7 +2735,7 @@ Define our templates for =org-capture=. There are lots of them.
         (doct '(
                 ("Tasks"
                  :keys "t"
-                 :file "master.org" :olp ("Capacity Manager")
+                 :file "work.org" :olp ("Inbox")
                  :type entry :prepend t
                  :children (
                             ("Respond"
@@ -2804,51 +2780,6 @@ Define our templates for =org-capture=. There are lots of them.
                              :keys "i"
                              :file "journal.org"
                              :type entry  :olp ("Journal")
-                             :datetree t :time-prompt t :tree-type week :prepend t
-                             :template  "* %? :JOURNAL:\n%U\n"
-                           )
-                 ))
-
-                ("Tasks (EOS)"
-                 :keys "T"
-                 :file "master.org" :type entry :olp ("EOS Profesional Services")
-                 :children (
-                            ("Respond"
-                             :keys "r"
-                             :template "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n")
-                            ("Meeting with %?"
-                             :keys "m"
-                             :type entry  :olp ("Journal") :file "proj_eos.org"
-                             :datetree t :time-prompt t :tree-type week :prepend t
-                             :template "* MEETING with %? :MEETING:\n%U")
-                            ("Meeting: %?"
-                             :keys "M"
-                             :type entry  :olp ("Journal") :file "proj_eos.org"
-                             :datetree t :time-prompt t :tree-type week :prepend t
-                             :template "* %<%Y-%m-%d> - %? :MEETING:\n%U")
-                            ("Task"
-                             :keys "t"
-                             :template "* TODO %?\n%U\n")
-                            ("Call"
-                             :keys "c"
-                             :type entry  :olp ("Journal") :file "proj_eos.org"
-                             :datetree t :time-prompt t :tree-type week :prepend t
-                             :template "* Phone Call with %?\n%U")
-                            ("Note"
-                             :keys "n"
-                             :type entry :olp ("Journal") :file "proj_eos.org"
-                             :datetree t :time-prompt t :tree-type week :prepend t
-                             :template "* %? :NOTE:\n%U\n"
-                            )
-                            ("Journal"
-                             :keys "j"
-                             :type entry  :olp ("Journal") :file "proj_eo2s.org"
-                             :datetree t :time-prompt t :tree-type week :prepend t
-                             :template  "* %? :JOURNAL:\n%U\n"
-                           )
-                           ("Idea"
-                             :keys "i"
-                             :type entry  :olp ("Journal") :file "proj_eos.org"
                              :datetree t :time-prompt t :tree-type week :prepend t
                              :template  "* %? :JOURNAL:\n%U\n"
                            )
@@ -3088,23 +3019,25 @@ Mark TODO entries DONE when all subentries are done. From [[https://orgmode.org/
 Define structure templates.
 
 #+begin_src emacs-lisp
-  (setq org-structure-template-alist '(
-    ("c" . "center")
-    ("C" . "comment")
-    ("e" . "example")
-    ("E" . "export")
-    ("s" . "src")
-    ("v" . "verse")))
+  (setq org-structure-template-alist 
+        '(
+          ("c" . "center")
+          ("C" . "comment")
+          ("e" . "example")
+          ("E" . "export")
+          ("s" . "src")
+          ("v" . "verse")))
 #+end_src
 
 Define emphasis pairs.
 
 #+begin_src emacs-lisp
-  (setq org-emphasis-alist (quote (("*" bold "<b>" "</b>")
-                                   ("/" italic "<i>" "</i>")
-                                   ("_" underline "<span style=\"text-decoration:underline;\">" "</span>")
-                                   ("=" org-code "<code>" "</code>" verbatim)
-                                   ("~" org-verbatim "<code>" "</code>" verbatim))))
+  (setq org-emphasis-alist 
+        (quote (("*" bold "<b>" "</b>")
+                ("/" italic "<i>" "</i>")
+                ("_" underline "<span style=\"text-decoration:underline;\">" "</span>")
+                ("=" org-code "<code>" "</code>" verbatim)
+                ("~" org-verbatim "<code>" "</code>" verbatim))))
 #+end_src
 
 Disable superscripts and subscripts.
@@ -3249,16 +3182,22 @@ Edit code blocks in the current window.
 Indent should behave natively in =emacs-lisp= source code blocks. From [[https://stackoverflow.com/questions/15773354/indent-code-in-org-babel-src-blocks][here]].
 
 #+begin_src emacs-lisp
+  (defvar tlc/org-babel-native-indent-languages
+    '(
+      "emacs-lisp" 
+      "python")
+    "The list of languages for which to enable native indent behavior in code blocks.")
+  
   (defun indent-org-src-block-line ()
     "Indent the current line of emacs lisp code."
     (interactive)
     (let ((info (org-babel-get-src-block-info 'light)))
       (when info
         (let ((lang (nth 0 info)))
-          (when (string= lang "emacs-lisp")
+          (when (member lang tlc/org-babel-native-indent-languages) 
             (let ((indent-line-function 'lisp-indent-line))
               (indent-for-tab-command)))))))
-
+  
   (add-to-list 'org-tab-before-tab-emulation-hook
                'indent-org-src-block-line)
 #+end_src
@@ -3267,7 +3206,10 @@ Indent should behave natively in =emacs-lisp= source code blocks. From [[https:/
 Fix an incompatibility between the =ob-async= and =ob-ipython= packages
 
 #+begin_src emacs-lisp
-  (setq ob-async-no-async-languages-alist '("ipython"))
+  (setq ob-async-no-async-languages-alist 
+        '(
+          "ipython"
+          ))
 #+end_src
 
 ***** Org File Skeletons
@@ -3281,13 +3223,9 @@ Define a skeleton for an Org file header.
     "Insert the header into aan org-mode file."
     "# -*- mode: org; coding: utf-8; -*-\n"
     "#+TITLE: " (skeleton-read "Title: ") "\n"
-    "#+AUTHOR: " user-full-name "\n"
-    "#+EMAIL: " user-mail-address "\n"
     "#+DATE: Time-stamp: <>\n"
-    "#+STARTUP: overview hideblocks hidestars align logdone logdeadline odd\n"
-    "#+STARTUP:  fnlocal fnaauto fnadjust \n"
-    "#+TODO: TODO(t) DOING(d) WAITING(w@/!) DELEGATED(l@/!) | DONE(x!) CANCELED(c@/!) FORWARD(f)\n"
     "#+FILETAGS: :" (skeleton-read "File tags (colon-separated): ") ":\n"
+    "#+SETUPFILE: ./_setup.org\n"
     "#+SETUPFILE: ./_themes/setup/theme-readtheorg-local.setup\n"
     )
 #+end_src
@@ -3295,56 +3233,53 @@ Define a skeleton for an Org file header.
 Define a skeleton for an Org project file.
 
 #+begin_src emacs-lisp
-      (define-skeleton tlc/org-project-skeleton
-        "Create a skeleton for an org project file."
-        "# -*- mode: org; coding: utf-8; -*-\n"
-        "#+TITLE: Projects - " (skeleton-read "Project Name: ") "\n"
-        "#+AUTHOR: " user-full-name "\n"
-        "#+EMAIL: " user-mail-address "\n"
-        "#+DATE: Time-stamp: <>\n"
-        "#+STARTUP: content hideblocks hidestars align logdone logdeadline odd\n"
-        "#+STARTUP: fnlocal fnaauto fnadjust \n"
-        "#+TAGS: INITIATION(i) PLANNING(p) EXECUTION(e) MONITORING(m) CLOSURE(c)\n"
-        "#+TAGS: MEETING(M) DEADLINE(D) DELIVERABLE(E) KPI(K) RESULT(R)\n"
-        "#+FILETAGS: :PROJECT:\n"
-        "#+SETUPFILE: ./_themes/setup/theme-readtheorg-local.setup\n"
-        "\n"
-        "* Inbox\n"
-        "* Project Planning\n"
-        "*** Initiation :INITIATION:\n"
-        "****** Project Charter\n"
-        "****** Stakeholders\n"
-        "*** Planning :PLANNING:\n"
-        "***** Goals\n"
-        "***** Scope Statement\n"
-        "***** Milestones\n"
-        "***** Communication Plan\n"
-        "***** Risks\n"
-        "*** Execution :EXECUTION:\n"
-        "***** Project Meetings\n"
-        "*** Monitoring & Control :MONITORING:\n"
-        "***** Status Reports\n"
-        "*** Closure :CLOSURE:\n"
-        "***** Post Mortem\n"
-        "***** Punch List\n"
-        "***** Final Report\n"
-        "* Project Plan                                          :taskjuggler_project:\n"
-        "  :PROPERTIES:\n"
-        "  :outputdir: \".\/\"\n"
-        "  :EXPORT_TITLE: project-name\n"
-        "  :ID: project_id\n"
-        "  :VERSION:  1\n"
-        "  :timezone: \"America/Phoenix\"\n"
-        "  :END:\n"
-        "  #+PROPERTY: Effort_ALL 1h 1d 2d 3d 5d 10d 15d 20d 25d 30d 45d\n"
-        "  #+PROPERTY: Resource_ALL tammy\n"
-        "  #+COLUMNS: %30ITEM(Task) %Effort %start %depends %ORDERED %BLOCKER %allocate\n"
-        "  #+NAME: project_plan\n"
-        "* Resources                                            :taskjuggler_resource:\n"
-        "  :PROPERTIES:"
-        "  :STARTUP:  folded"
-        "  :END:"
-        "* Reports                                              :taskjuggler_reports:\n"
+  (define-skeleton tlc/org-project-skeleton
+    "Create a skeleton for an org project file."
+    "# -*- mode: org; coding: utf-8; -*-\n"
+    "#+TITLE: Projects - " (skeleton-read "Project Name: ") "\n"
+    "#+DATE: Time-stamp: <>\n"
+    "#+TAGS: INITIATION(i) PLANNING(p) EXECUTION(e) MONITORING(m) CLOSURE(c)\n"
+    "#+TAGS: MEETING(M) DEADLINE(D) DELIVERABLE(E) KPI(K) RESULT(R)\n"
+    "#+FILETAGS: :PROJECT:\n"
+    "#+SETUPFILE: ./_themes/setup/theme-readtheorg-local.setup\n"
+    "#+SETUPFILE: ./_setup.org\n"
+    "\n"
+    "* Inbox\n"
+    "* Project Planning\n"
+    "*** Initiation :INITIATION:\n"
+    "****** Project Charter\n"
+    "****** Stakeholders\n"
+    "*** Planning :PLANNING:\n"
+    "***** Goals\n"
+    "***** Scope Statement\n"
+    "***** Milestones\n"
+    "***** Communication Plan\n"
+    "***** Risks\n"
+    "*** Execution :EXECUTION:\n"
+    "***** Project Meetings\n"
+    "*** Monitoring & Control :MONITORING:\n"
+    "***** Status Reports\n"
+    "*** Closure :CLOSURE:\n"
+    "***** Post Mortem\n"
+    "***** Punch List\n"
+    "***** Final Report\n"
+    "* Project Plan                                          :taskjuggler_project:\n"
+    "  :PROPERTIES:\n"
+    "  :outputdir: \".\/\"\n"
+    "  :EXPORT_TITLE: project-name\n"
+    "  :ID: project_id\n"
+    "  :VERSION:  1\n"
+    "  :timezone: \"America/Phoenix\"\n"
+    "  :END:\n"
+    "  #+PROPERTY: Effort_ALL 1h 1d 2d 3d 5d 10d 15d 20d 25d 30d 45d\n"
+    "  #+PROPERTY: Resource_ALL tammy\n"
+    "  #+COLUMNS: %30ITEM(Task) %Effort %start %depends %ORDERED %BLOCKER %allocate\n"
+    "  #+NAME: project_plan\n"
+    "* Resources                                            :taskjuggler_resource:\n"
+    "  :PROPERTIES:"
+    "  :STARTUP:  folded"
+    "  :END:"
+    "* Reports                                              :taskjuggler_reports:\n"
     )
 #+end_src
 
@@ -3355,8 +3290,6 @@ Define a skeleton for a writing project.
   (define-skeleton tlc/org-writing-skeleton
     "Create a skeleton for writing/publishing files."
     "#+TITLE: " (skeleton-read "Title: ") "\n"
-    "#+AUTHOR: " user-full-name "\n"
-    "#+EMAIL: " user-mail-address "\n"
     "#+DATE: Time-stamp: <>\n"
     "#+CREATOR: " user-full-name "\n"
     "#+LANGUAGE: en\n"
@@ -3364,9 +3297,8 @@ Define a skeleton for a writing project.
     "#+OPTIONS: ':t *:t -:t ::t author:t creator:t date:t e:t email:t f:t H:3\n"
     "#+OPTIONS: title:t |:t toc:nil\n"
     "#+TAGS: noexport(n) draft(d) revise(r) complete(c)\n"
-    "#+STARTUP: content hideblocks hidestars align logdone logdeadline odd\n"
-    "#+STARTUP: fnlocal fnaauto fnadjust \n"
     "#+FILETAGS: :WRITING:MANUSCRIPT:\n"
+    "#+SETUPFILE: ./_setup.org\n"
     "#+SETUPFILE: ./_themes/setup/theme-readtheorg-local.setup\n"
     "\n"
     "* Characters                                                       :noexport:\n"
@@ -3620,6 +3552,40 @@ Make sure =ox-latex= is loaded.
 
 #+begin_src emacs-lisp
   (require 'ox-latex)
+  (setq org-latex-minted-options
+          '(("frame" "lines") ("linenos=true")))
+  
+  (with-eval-after-load 'ox-latex
+    (add-to-list 'org-latex-packages-alist '("" "minted"))
+    (setq org-latex-listings 'minted)
+    (add-to-list 'org-latex-minted-langs
+                 '(
+                   (python "py3")
+                   (clojure "clojure")
+                   (lisp "common-lisp")
+                   (powershell "powershell")
+                   (ruby "ruby")
+                   (go "go")
+                   (haskell "haskell")
+                   (ipython "ipython")
+                   (inform "inform6")
+                   (javascript "javascript")
+                   (less "less")
+                   (objc "objective-c")
+                   (ocaml "ocaml")
+                   (octave "octave")
+                   (perl "perl")
+                   (rust "rust")
+                   (sql "sql")
+                   (yaml "yaml")
+                   ))
+  
+    (setq org-latex-pdf-process
+          '(
+            "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+            "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+            "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+            )))
 #+end_src
 
 Always publish org projects, even if the source files are unchanged.
@@ -3634,23 +3600,23 @@ levels of hierarchy in book projects.
 
 #+begin_src emacs-lisp
   (add-to-list 'org-latex-classes
-              '(
-                  "pub_book"
-                  "[NO_DEFAULT_PACKAGES][NO_PACKAGES][NO_EXTRA]"
-                  ("\\part{%s}" . "\\part*{%s}")
-                  ("\\chapter{%s}" . "\\chapter*{%s}")
-                  ("\\section{%s}" . "\\section*{%s}")
-                  ("\\subsection{%s}" . "\\subsection*{%s}")
-                  ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
-
+               '(
+                 "pub_book"
+                 "[NO_DEFAULT_PACKAGES][NO_PACKAGES][NO_EXTRA]"
+                 ("\\part{%s}" . "\\part*{%s}")
+                 ("\\chapter{%s}" . "\\chapter*{%s}")
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
+  
   (add-to-list 'org-latex-classes
-              '(
-                  "pub_book_fmem"
-                  "[NO_DEFAULT_PACKAGES][NO_PACKAGES][NO_EXTRA]"
-                  ("\\chapter*{%s}" . "\\chapter*{%s}")
-                  ("\\section*{%s}" . "\\section*{%s}")
-                  ("\\subsection*{%s}" . "\\subsection*{%s}")
-                  ("\\subsubsection*{%s}" . "\\subsubsection*{%s}")))
+               '(
+                 "pub_book_fmem"
+                 "[NO_DEFAULT_PACKAGES][NO_PACKAGES][NO_EXTRA]"
+                 ("\\chapter*{%s}" . "\\chapter*{%s}")
+                 ("\\section*{%s}" . "\\section*{%s}")
+                 ("\\subsection*{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection*{%s}" . "\\subsubsection*{%s}")))
 #+end_src
 
 Define a helper function to publish an org file to latex and then
@@ -3677,20 +3643,20 @@ output.
 #+begin_src emacs-lisp
   (defun tlc/org-publish-transformation2e-fm (plist filename pubdir)
     (tlc/org-publish-and-rename-latex
-     "~/org-life/transformation_2e/tex/transformation_2e.tex"
-     "~/org-life/transformation_2e/tex/transformation_2e_frontmatter.tex"
+     (concat org-dir "/transformation_2e/tex/transformation_2e.tex")
+     (concat org-dir "/transformation_2e/tex/transformation_2e_frontmatter.tex")
      plist filename pubdir))
-
+  
   (defun tlc/org-publish-transformation2e-main (plist filename pubdir)
     (tlc/org-publish-and-rename-latex
-     "~/org-life/transformation_2e/tex/transformation_2e.tex"
-     "~/org-life/transformation_2e/tex/transformation_2e_main.tex"
+     (concat org-dir "/transformation_2e/tex/transformation_2e.tex")
+     (concat org-dir "/transformation_2e/tex/transformation_2e_main.tex")
      plist filename pubdir))
-
+  
   (defun tlc/org-publish-transformation2e-em (plist filename pubdir)
     (tlc/org-publish-and-rename-latex
-     "~/org-life/transformation_2e/tex/transformation_2e.tex"
-     "~/org-life/transformation_2e/tex/transformation_2e_endmatter.tex"
+     (concat org-dir "/transformation_2e/tex/transformation_2e.tex")
+     (concat org-dir "/transformation_2e/tex/transformation_2e_endmatter.tex")
      plist filename pubdir))
 #+end_src
 
@@ -3706,24 +3672,24 @@ this project.
 
   (add-to-list 'org-publish-project-alist
                '("transformation2e_fm"
-                 :base-directory "~/org-life/transformation_2e"
-                 :publishing-directory "~/org-life/transformation_2e/tex"
+                 :base-directory (concat org-dir "/transformation_2e")
+                 :publishing-directory (concat org-dir "/transformation_2e/tex")
                  :publishing-function tlc/org-publish-transformation2e-fm
                  :select-tags ("frontmatter")
                  :with-latex t :latex-class "pub_book_fmem" :body-only t) t)
 
   (add-to-list 'org-publish-project-alist
                '("transformation2e_main"
-                 :base-directory "~/org-life/transformation_2e"
-                 :publishing-directory "~/org-life/transformation_2e/tex"
+                 :base-directory (concat org-dir "/transformation_2e")
+                 :publishing-directory (concat org-dir "/transformation_2e/tex")
                  :publishing-function tlc/org-publish-transformation2e-main
                  :select-tags ("mainmatter")
                  :with-latex t :latex-class "pub_book" :body-only t) t)
 
   (add-to-list 'org-publish-project-alist
                '("transformation2e_em"
-                 :base-directory "~/org-life/transformation_2e"
-                 :publishing-directory "~/org-life/transformation_2e/tex"
+                 :base-directory (concat org-dir "/transformation_2e")
+                 :publishing-directory (concat org-dir "/transformation_2e/tex")
                  :publishing-function tlc/org-publish-transformation2e-em
                  :select-tags ("endmatter")
                  :with-latex t :latex-class "pub_book_fmem" :body-only t) t)
@@ -3737,20 +3703,20 @@ output.
 #+begin_src emacs-lisp
   (defun tlc/org-publish-azmystery1-fm (plist filename pubdir)
     (tlc/org-publish-and-rename-latex
-     "~/org-life/az_mystery_1/tex/az_mystery_1.tex"
-     "~/org-life/az_mystery_1/tex/az_mystery_1_frontmatter.tex"
+     (concat org-dir "/az_mystery_1/tex/az_mystery_1.tex")
+     (concat org-dir "/az_mystery_1/tex/az_mystery_1_frontmatter.tex")
      plist filename pubdir))
-
+  
   (defun tlc/org-publish-azmystery1-main (plist filename pubdir)
     (tlc/org-publish-and-rename-latex
-     "~/org-life/az_mystery_1/tex/az_mystery_1.tex"
-     "~/org-life/az_mystery_1/tex/az_mystery_1_main.tex"
+     (concat org-dir "/az_mystery_1/tex/az_mystery_1.tex")
+     (concat org-dir "/az_mystery_1/tex/az_mystery_1_main.tex")
      plist filename pubdir))
-
+  
   (defun tlc/org-publish-azmystery1-em (plist filename pubdir)
     (tlc/org-publish-and-rename-latex
-     "~/org-life/az_mystery_1/tex/az_mystery_1.tex"
-     "~/org-life/az_mystery_1/tex/az_mystery_1_endmatter.tex"
+     (concat org-dir "/az_mystery_1/tex/az_mystery_1.tex")
+     (concat org-dir "/az_mystery_1/tex/az_mystery_1_endmatter.tex")
      plist filename pubdir))
 #+end_src
 
@@ -3766,24 +3732,24 @@ this project.
 
   (add-to-list 'org-publish-project-alist
                '("azmystery1_fm"
-                 :base-directory "~/org-life/az_mystery_1"
-                 :publishing-directory "~/org-life/az_mystery_1/tex"
+                 :base-directory (concat org-dir "/az_mystery_1")
+                 :publishing-directory (concat org-dir "/az_mystery_1/tex")
                  :publishing-function tlc/org-publish-azmystery1-fm
                  :select-tags ("frontmatter")
                  :with-latex t :latex-class "pub_book_fmem" :body-only t) t)
 
   (add-to-list 'org-publish-project-alist
                '("azmystery1_main"
-                 :base-directory "~/org-life/az_mystery_1"
-                 :publishing-directory "~/org-life/az_mystery_1/tex"
+                 :base-directory (concat org-dir "/az_mystery_1")
+                 :publishing-directory (concat org-dir "/az_mystery_1/tex")
                  :publishing-function tlc/org-publish-azmystery1-main
                  :select-tags ("mainmatter")
                  :with-latex t :latex-class "pub_book" :body-only t) t)
 
   (add-to-list 'org-publish-project-alist
                '("azmystery1_em"
-                 :base-directory "~/org-life/az_mystery_1"
-                 :publishing-directory "~/org-life/az_mystery_1/tex"
+                 :base-directory (concat org-dir "/az_mystery_1")
+                 :publishing-directory (concat org-dir "/az_mystery_1/tex")
                  :publishing-function tlc/org-publish-azmystery1-em
                  :select-tags ("endmatter")
                  :with-latex t :latex-class "pub_book_fmem" :body-only t) t)
@@ -3854,8 +3820,6 @@ Set up the org-mode tags we'll use to identify our project plan sections.
          "# Include standard shift definitions"
          "include \"shifts.tji\""
          ""
-         "# Include EOS Deadlines as vacations"
-         "include \"eos_deadlines.tji\""
          "\n"
          ) "\n"))
 #+end_src

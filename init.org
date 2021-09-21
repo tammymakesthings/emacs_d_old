@@ -2,7 +2,7 @@
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
 #+EMAIL: tammymakesthings@gmail.com
-#+DATE: Time-stamp: <2021-09-21 09:23:14 tammy>
+#+DATE: Time-stamp: <2021-09-21 10:53:00 CORP\tcravi01>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -642,7 +642,7 @@ The first one of these that's found will be used.
          ((find-font (font-spec :name "Cascadia Code PL"))
           (progn
             (setq tlc/frame-font-face "Cascadia Code PL")
-            (setq tlc/frame-font-size 150)))
+            (setq tlc/frame-font-size 110)))
          ;; ((find-font (font-spec :name "Source Code Pro"))
          ;;  (progn
          ;;    (setq tlc/frame-font-face "Source Code Pro")
@@ -1512,9 +1512,7 @@ of other stuff. As you'll see, it's VERY customizable.
     (require 'org-datetree)
     (require 'org-element)
     (require 'org-protocol)
-    (require 'org-docview)
     (require 'org-id)
-    (require 'org-info)
     (require 'org-inlinetask)
     (require 'org-mouse)
     (require 'org-protocol)
@@ -1658,12 +1656,26 @@ it.
 #+begin_src emacs-lisp
   (defvar tlc/org-github-repo nil "Github directory for my org-life files")
   (setq tlc/org-github-repo "git@github.com:tammymakesthings/org_life.git")
+  
+  (defvar tlc/org-life-locations 
+    '(
+      (expand-file-name "~/org-life")
+      (expand-file-name "~/Dropbox/org-life")
+      (expand-file-name "~/Projects/org-life")) 
+    "The list of possible org-life locations")
+  
+  (setq org-directory (expand-file-name "~/org-life"))
 
-  (cond
-   ((file-directory-p "~/org-life") (setq org-directory (expand-file-name "~/org-life")))
-   ((file-directory-p "~/Dropbox/org-life") (setq org-directory (expand-file-name "~/Dropbox/org-life")))
-   (t (setq org-directory (expand-file-name "~/org-life"))))
-
+  (let (test-locations tlc/org-life-locations)
+    (while test-locations
+            (if (or (file-directory-p (car test-locations))
+                    (file-symlink-p (car test-locations)))
+                (progn
+                  (message "Setting org directory to %s" (car test-locations))
+                  (setq org-directory (expand-file-name (car test-locations)))
+                  (setq test-locations (cdr test-locations))))
+            (setq test-locations (cdr test-locations))))
+  
   (unless (file-directory-p org-directory)
     (if (yes-or-no-p (concat "Org directory \"" org-directory "\" not found - clone from Github?"))
         (shell-command (concat "git clone " tlc/org-github-repo " " (expand-file-name org-directory)))))
@@ -1674,7 +1686,7 @@ it.
 Set the default notes file.
 
 #+begin_src emacs-lisp
-  (setq org-default-notes-file (file-truename (concat org-directory "/codex.org")))
+  (setq org-default-notes-file (expand-file-name (concat org-directory "/codex.org")))
 #+end_src
 
 Set org indent settings.
@@ -1802,8 +1814,7 @@ Define a function to open our most used files with a keystroke.
 
 #+begin_src emacs-lisp
   
-  (defvar tlc/org-master-files '(
-                                 "inbox.org"
+  (defvar tlc/org-master-files '("inbox.org"
                                  "work.org"
                                  "personal.org"
                                  "someday.org")
@@ -1836,7 +1847,7 @@ Define a function to open our most used files with a keystroke.
   
   (setq tlc/default-master-file "work.org")
   (global-set-key (kbd "<f12>") 'tlc/open-org-files)
-  (global-set-key (kbd "\C-c =") 'tlc/open-org-files)
+  (global-set-key "\C-c=" 'tlc/open-org-files)
 #+end_src
 
 ***** General Helper Functions
@@ -1924,21 +1935,34 @@ From [[https://orgmode.org/worg/org-hacks.html][here]].
 
 ***** Org Key Bindings
 #+begin_src emacs-lisp
-  (global-set-key "\C-cc" 'org-capture)
-  (global-set-key "\C-cl" 'org-store-link)
-  (global-set-key "\C-c\C-l" 'org-insert-link)
-  (global-set-key "\C-ca" 'org-agenda)
-  (global-set-key "\C-cb" 'org-iswitchb)
-  (global-set-key "\C-cr" 'org-refile)
-  (global-set-key "\C-c/" 'org-agenda-list)
+  ;;;;;;;;;;
+  ;; Org-Mode Global Key Bindings
+  ;;;;;;;;;;
 
-  (define-key org-mode-map "\C-cp" 'org-insert-property-drawer)
-  (define-key org-mode-map "\C-c/" 'tlc/org-add-folded-property)
-  (define-key org-mode-map (kbd "<f4>") 'org-table-recalculate-buffer-tables)
-
+  (global-set-key "\C-cc"      'org-capture)
+  (global-set-key "\C-cl"      'org-store-link)
+  (global-set-key "\C-c\C-l"   'org-insert-link)
+  (global-set-key "\C-ca"      'org-agenda)
+  (global-set-key "\C-cb"      'org-iswitchb)
+  (global-set-key "\C-cr"      'org-refile)
+  (global-set-key "\C-c/"      'org-agenda-list)
   (global-set-key (kbd "<f7>") 'org-agenda)
   (global-set-key (kbd "<f8>") 'org-agenda-list)
 
+
+  ;;;;;;;;;;
+  ;; Local Key Bindings
+  ;;;;;;;;;;
+
+  (define-key org-mode-map "\C-cp"       'org-insert-property-drawer)
+  (define-key org-mode-map "\C-c/"       'tlc/org-add-folded-property)
+  (define-key org-mode-map (kbd "<f4>")  'org-table-recalculate-buffer-tables)
+#+end_src
+
+Enable the [[https://github.com/alphapapa/org-super-agenda][org-super-agenda]] sidebar. We also load [[https://github.com/alphapapa/org-ql][org-ql]] (for querying) and
+[[https://github.com/alphapapa/org-sidebar][org-sidebar]] (to allow opening stuff in the sidebar window) here.
+
+#+begin_src emacs-lisp
   (require 'org-super-agenda)
   (require 'org-ql)
   (require 'org-sidebar)
@@ -1953,17 +1977,23 @@ From [[https://orgmode.org/worg/org-hacks.html][here]].
 
 ***** Archiving Settings
 
-Set the archiving location and options.
+Set the default archiving location and options.
 
 #+begin_src emacs-lisp
+  (defvar tlc/org-archive-directory (file-truename (concat org-directory "/archive")))
+  (if (not (file-directory-p tlc/org-archive-directory))
+      (progn
+        (message "Creating org archive directory: %s" tlc/org-archive-directory)
+        (make-directory tlc/org-archive-directory)))
+  
   (setq org-archive-location
-    (concat
-       org-directory
-       "/archive/%s_archive_"
-       (prin1-to-string (nth 5 (parse-time-string (current-time-string))))
-       "::datetree/* Archive"
-    ))
-
+        (concat
+         tlc/org-archive-directory
+         "e/%s_archive_"
+         (prin1-to-string (nth 5 (parse-time-string (current-time-string))))
+         "::datetree/* Archive"
+         ))
+  
   (setq org-archive-mark-done t)
   (setq org-archive-reversed-order t)
 #+end_src
@@ -4016,8 +4046,13 @@ Configure AuCTeX integration.
 Make sure the Gnu server is started if it's available.
 
 #+begin_src emacs-lisp
-  (unless (and (fboundp 'server-running-p) (server-running-p))
-     (server-start))
+  (if (and
+       (file-directory-p (expand-file-name "~/.emacs.d/server"))
+       (eq (user-uid) (nth 2 (file-attributes (expand-file-name "~/.emacs.d/server")))))
+  
+      (unless (and (fboundp 'server-running-p) (server-running-p))
+        (server-start))
+    (message "Not starting Gnu Server: ownership of %s is not you. Please fix it and try again"))
 #+end_src
 
 *** Miscellaneous Customizations
@@ -4165,12 +4200,18 @@ This defines a system-specific file by hostname (work computer, home computer,
 etc). If these are present, the correct one is loaded.
 
 #+begin_src emacs-lisp
-  (let ((system-file (concat user-emacs-directory "settings-system-" (downcase (system-name)) ".el")))
+  (let ((system-file 
+         (concat user-emacs-directory 
+                 "settings-system-" 
+                 (replace-regexp-in-string "\\.local" "" (downcase system-name)) 
+                 ".el")))
     (if (file-exists-p system-file)
-      (load-file system-file)))
+        (progn
+          (load-file system-file))))
 #+end_src
 
-***** System-Specific Settings - Home Laptop (Lenovo)
+
+***** System-Specific Settings - Home Laptop (MacBook Pro)
 
 #+begin_src emacs-lisp :tangle settings-system-wonderland.el
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -4180,6 +4221,8 @@ etc). If these are present, the correct one is loaded.
 
   (setq user-mail-address "tammymakesthings@gmail.com")
   (setq user-name "Tammy Cravit")
+  (setq user-domain "tammymakesthings.com")
+  (setq user-organisation "Tammy Makes Things")
 
   (provide 'settings-system-wonderland)
 #+end_src
@@ -4200,9 +4243,9 @@ etc). If these are present, the correct one is loaded.
   (provide 'settings-system-tmtlab)
 #+end_src
 
-***** System-Specific Settings - Work Laptop (LTXXXX)
+***** System-Specific Settings - Work Laptop (LT2000002779)
 
-#+begin_src emacs-lisp :tangle settings-system-ltXXXX.el
+#+begin_src emacs-lisp :tangle settings-system-lt2000002779.el
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; System-specific settings - work laptop (LTXXXX)
   ;; Tangled from init.org - do not modify directly
@@ -4214,9 +4257,7 @@ etc). If these are present, the correct one is loaded.
   (setq user-organisation "Blue Cross Blue Shield of Arizona")
   (setq user-login-name "CORP\\tcravi01")
 
-
-  (provide 'settings-system-ltXXXXX)
-
+  (provide 'settings-system-lt2000002779)
 #+end_src
 
 *** And we're done!
@@ -4224,6 +4265,3 @@ etc). If these are present, the correct one is loaded.
 #+begin_src emacs-lisp
   (message "init.el fully executed")
 #+end_src
-
-
-

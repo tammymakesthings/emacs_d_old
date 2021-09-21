@@ -1,7 +1,8 @@
  -*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
-#+DATE: Time-stamp: <2021-09-20 09:25:20 tammy>
+#+EMAIL: tammymakesthings@gmail.com
+#+DATE: Time-stamp: <2021-09-21 09:23:14 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -1835,7 +1836,7 @@ Define a function to open our most used files with a keystroke.
   
   (setq tlc/default-master-file "work.org")
   (global-set-key (kbd "<f12>") 'tlc/open-org-files)
-  (global-set-key "\C-c=" 'tlc/open-org-files)
+  (global-set-key (kbd "\C-c =") 'tlc/open-org-files)
 #+end_src
 
 ***** General Helper Functions
@@ -1932,8 +1933,7 @@ From [[https://orgmode.org/worg/org-hacks.html][here]].
   (global-set-key "\C-c/" 'org-agenda-list)
 
   (define-key org-mode-map "\C-cp" 'org-insert-property-drawer)
-  (define-key org-mode-map "C-c C-/" 'tlc/org-add-folded-property)
-  (define-key org-mode-map "\C-cf" 'tlc/org-add-folded-property)
+  (define-key org-mode-map "\C-c/" 'tlc/org-add-folded-property)
   (define-key org-mode-map (kbd "<f4>") 'org-table-recalculate-buffer-tables)
 
   (global-set-key (kbd "<f7>") 'org-agenda)
@@ -2137,21 +2137,63 @@ Set some options that speed up agenda processing.
 
 Generate the diary file in =~/.emacs.d/diary=.
 
+First we define a helper function to create a repeating entry for each
+weekday.
+
+#+begin_src emacs-lisp
+  (defun tlc/diary-weekly-entry (time description &optional work-week include-days exclude-days)
+    "Create a repeating diary entry on all weekdays.
+
+time - A valid diary time specifier
+description - the description of the meeting
+work-week - if non-nil, restrict to the work week
+include-days - if a list of days, use those instead of the default list
+exclude-days - it a list of days, events for those days are skipped"
+    (interactive)
+    (let
+        (daynames)
+      (progn
+        (cond
+         ((and include-days (listp include-days)) (setq daynames include-days))
+         (work-week (setq daynames '("Monday" "Tuesday" "Wednesday" "Thursday" "Friday")))
+         (t (setq daynames '("Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday" "Sunday"))))
+        (while daynames
+          (if (and exclude-days (listp exclude-days))
+              (if (not (member (car daynames) exclude-days))
+                  (insert (concat (car daynames) " " time " " description "\n")))
+            (insert (concat (car daynames) " " time " " description "\n")))
+            (setq daynames (cdr daynames))))))
+#+end_src
+
+Now actually create the diary file.
+
 #+begin_src org text :tangle ~/.emacs.d/diary
-%%(diary-sunrise)Sunrise in %s
-%%(diary-sunset)
+%%(diary-sunrise) Sunrise in %s
+%%(diary-sunset) Sunrise in %s
 %%(org-lunar-phases)
 3/13/2018 Anniversary: Dave's passing
 4/23/2013 Anniversary: Started at Mindbody
-4/19/1945 Dad's birthday
-6/04/1959 Cynthia's birthday
-8/04/1977 Joanna's birthday
-10/21/1973 My birthday
-10/22/2017 Charlie's birthday
-11/03/1946 Mom's birthday
-12/29/1940 Irwin's birthday
+7/02/2020 Anniversary: Mindbody separation
+7/27/2020 Anniversary: Started at BCBSAZ
+11/2/1998 Anniversary: Transition
+4/19/1945 Birthday: Dad
+6/04/1959 Birthday: Cynthia
+8/04/1977 Birthday: Joanna
+10/21/1973 Birthday: Me
+10/22/2017 Birthday: Charlie
+11/03/1946 Birthday: Mom
+12/29/1940 Birthday: Irwin
+6:00 Check Blood Sugar
+11:00 Check Blood Sugar
+17:00 Check Blood Sugar
+22:00 Check Blood Sugar
+6:30 Eat Breakfast
+11:15 Eat Lunch
+17:00 Eat Dinner
 %%(diary-cyclic 14 16 8 2019) Payday
-&%%(diary-float 11 4 4) Thanksgiving
+%%(diary-float 11 4 4) Thanksgiving
+%%(tlc/diary-weekday-entry "9:30am" "Collaboration Time")
+%%(tlc/diary-weekday-entry "10:00am" "Gatos de Datos DSU" nil '("Friday")
 #+end_src
 
 Include sunrise and sunset in the diary. From [[https://orgmode.org/worg/org-hacks.html#org6abe7b1][here]], modified to do location
@@ -3216,101 +3258,112 @@ Fix an incompatibility between the =ob-async= and =ob-ipython= packages
 
 [[https://www.emacswiki.org/emacs/SkeletonMode][Skeleton mode]] is a mechanism for defining file templates in Emacs.
 
-Define a skeleton for an Org file header.
+Define a simple helper function for project tags.
 
-#+begin_src emacs-lisp
-  (define-skeleton tlc/org-file-header-skeleton
-    "Insert the header into aan org-mode file."
-    "# -*- mode: org; coding: utf-8; -*-\n"
-    "#+TITLE: " (skeleton-read "Title: ") "\n"
-    "#+DATE: Time-stamp: <>\n"
-    "#+FILETAGS: :" (skeleton-read "File tags (colon-separated): ") ":\n"
-    "#+SETUPFILE: ./_setup.org\n"
-    "#+SETUPFILE: ./_themes/setup/theme-readtheorg-local.setup\n"
-    )
+  #+begin_src emacs-lisp
+  (defun tlc/format-tag-list (tag-list)
+     "Format a list of tags, by removing spaces and tabs and replacing commas and semicolons with colons."
+     (upcase (replace-regexp-in-string "[\s\t,;]+" ":" tag-list)))
+  #+end_src
+
+Define a skeleton for an Org file header.
+  
+  #+begin_src emacs-lisp
+    (define-skeleton tlc/org-file-header-skeleton
+      "Insert the header into aan org-mode file."
+      "# -*- mode: org; coding: utf-8; -*-\n"
+      "#+TITLE: " (skeleton-read "Title: ") "\n"
+      "#+DATE: Time-stamp: <>\n"
+      "#+FILETAGS: :" (tlc/format-tag-list (skeleton-read "File tags: ")) ":\n"
+      "#+CATEGORY: " (tlc/format-tag-list (skeleton-read "File categories: " "ORGANIZTION")) ":\n"
+      "#+SETUPFILE: ~/org-life/_setup.org\n"
+      "#+SETUPFILE: ~/org-life/_themes/org/theme-readtheorg-local.setup\n"
+      )
 #+end_src
 
 Define a skeleton for an Org project file.
 
 #+begin_src emacs-lisp
-  (define-skeleton tlc/org-project-skeleton
-    "Create a skeleton for an org project file."
-    "# -*- mode: org; coding: utf-8; -*-\n"
-    "#+TITLE: Projects - " (skeleton-read "Project Name: ") "\n"
-    "#+DATE: Time-stamp: <>\n"
-    "#+TAGS: INITIATION(i) PLANNING(p) EXECUTION(e) MONITORING(m) CLOSURE(c)\n"
-    "#+TAGS: MEETING(M) DEADLINE(D) DELIVERABLE(E) KPI(K) RESULT(R)\n"
-    "#+FILETAGS: :PROJECT:\n"
-    "#+SETUPFILE: ./_themes/setup/theme-readtheorg-local.setup\n"
-    "#+SETUPFILE: ./_setup.org\n"
-    "\n"
-    "* Inbox\n"
-    "* Project Planning\n"
-    "*** Initiation :INITIATION:\n"
-    "****** Project Charter\n"
-    "****** Stakeholders\n"
-    "*** Planning :PLANNING:\n"
-    "***** Goals\n"
-    "***** Scope Statement\n"
-    "***** Milestones\n"
-    "***** Communication Plan\n"
-    "***** Risks\n"
-    "*** Execution :EXECUTION:\n"
-    "***** Project Meetings\n"
-    "*** Monitoring & Control :MONITORING:\n"
-    "***** Status Reports\n"
-    "*** Closure :CLOSURE:\n"
-    "***** Post Mortem\n"
-    "***** Punch List\n"
-    "***** Final Report\n"
-    "* Project Plan                                          :taskjuggler_project:\n"
-    "  :PROPERTIES:\n"
-    "  :outputdir: \".\/\"\n"
-    "  :EXPORT_TITLE: project-name\n"
-    "  :ID: project_id\n"
-    "  :VERSION:  1\n"
-    "  :timezone: \"America/Phoenix\"\n"
-    "  :END:\n"
-    "  #+PROPERTY: Effort_ALL 1h 1d 2d 3d 5d 10d 15d 20d 25d 30d 45d\n"
-    "  #+PROPERTY: Resource_ALL tammy\n"
-    "  #+COLUMNS: %30ITEM(Task) %Effort %start %depends %ORDERED %BLOCKER %allocate\n"
-    "  #+NAME: project_plan\n"
-    "* Resources                                            :taskjuggler_resource:\n"
-    "  :PROPERTIES:"
-    "  :STARTUP:  folded"
-    "  :END:"
-    "* Reports                                              :taskjuggler_reports:\n"
-    )
+   (define-skeleton tlc/org-project-skeleton
+     "Create a skeleton for an org project file."
+     "# -*- mode: org; coding: utf-8; -*-\n"
+     "#+TITLE: Projects - " (skeleton-read "Project Name: ") "\n"
+     "#+DATE: Time-stamp: <>\n"
+     "#+TAGS: INITIATION(i) PLANNING(p) EXECUTION(e) MONITORING(m) CLOSURE(c)\n"
+     "#+TAGS: MEETING(M) DEADLINE(D) DELIVERABLE(E) KPI(K) RESULT(R)\n"
+     "#+FILETAGS: :PROJECT:" (tlc/format-tag-list (skeleton-read "File tags: "))  ":\n"
+     "#+CATEGORY: " (tlc/format-tag-list (skeleton-read "File categories: " "PROJECT")) ":\n"
+     "#+SETUPFILE: ~/org-life/_setup.org\n"
+     "#+SETUPFILE: ~/org-life/_themes/org/theme-readtheorg-local.setup\n"
+     "\n"
+     "* Inbox\n"
+     "* Project Planning\n"
+     "*** Initiation :INITIATION:\n"
+     "****** Project Charter\n"
+     "****** Stakeholders\n"
+     "*** Planning :PLANNING:\n"
+     "***** Goals\n"
+     "***** Scope Statement\n"
+     "***** Milestones\n"
+     "***** Communication Plan\n"
+     "***** Risks\n"
+     "*** Execution :EXECUTION:\n"
+     "***** Project Meetings\n"
+     "*** Monitoring & Control :MONITORING:\n"
+     "***** Status Reports\n"
+     "*** Closure :CLOSURE:\n"
+     "***** Post Mortem\n"
+     "***** Punch List\n"
+     "***** Final Report\n"
+     "* Project Plan                                          :taskjuggler_project:\n"
+     "  :PROPERTIES:\n"
+     "  :outputdir: \".\/\"\n"
+     "  :EXPORT_TITLE: project-name\n"
+     "  :ID: project_id\n"
+     "  :VERSION:  1\n"
+     "  :timezone: \"America/Phoenix\"\n"
+     "  :END:\n"
+     "  #+PROPERTY: Effort_ALL 1h 1d 2d 3d 5d 10d 15d 20d 25d 30d 45d\n"
+     "  #+PROPERTY: Resource_ALL tammy\n"
+     "  #+COLUMNS: %30ITEM(Task) %Effort %start %depends %ORDERED %BLOCKER %allocate\n"
+     "  #+NAME: project_plan\n"
+     "* Resources                                            :taskjuggler_resource:\n"
+     "  :PROPERTIES:"
+     "  :STARTUP:  folded"
+     "  :END:"
+     "* Reports                                              :taskjuggler_reports:\n"
+     )
 #+end_src
 
 
-Define a skeleton for a writing project.
+  Define a skeleton for a writing project.
 
-#+begin_src emacs-lisp
-  (define-skeleton tlc/org-writing-skeleton
-    "Create a skeleton for writing/publishing files."
-    "#+TITLE: " (skeleton-read "Title: ") "\n"
-    "#+DATE: Time-stamp: <>\n"
-    "#+CREATOR: " user-full-name "\n"
-    "#+LANGUAGE: en\n"
-    "#+EXCLUDE_TAGS: noexport\n"
-    "#+OPTIONS: ':t *:t -:t ::t author:t creator:t date:t e:t email:t f:t H:3\n"
-    "#+OPTIONS: title:t |:t toc:nil\n"
-    "#+TAGS: noexport(n) draft(d) revise(r) complete(c)\n"
-    "#+FILETAGS: :WRITING:MANUSCRIPT:\n"
-    "#+SETUPFILE: ./_setup.org\n"
-    "#+SETUPFILE: ./_themes/setup/theme-readtheorg-local.setup\n"
-    "\n"
-    "* Characters                                                       :noexport:\n"
-    "* Settings                                                         :noexport:\n"
-    "* Research                                                         :noexport:\n"
-    "* Journal                                                          :noexport:\n"
-    "* Dedication                                                    :frontmatter:\n"
-    "* Acknowledgements                                              :frontmatter:\n"
-    "* Prologue                                                       :mainmatter:\n"
-    "* Chapter 1                                                      :mainmatter:\n"
-    "* Endmatter                                                       :endmatter:\n"
-    "* Unfiled Scenes                                                   :noexport:\n")
+  #+begin_src emacs-lisp
+    (define-skeleton tlc/org-writing-skeleton
+      "Create a skeleton for writing/publishing files."
+      "#+TITLE: " (skeleton-read "Title: ") "\n"
+      "#+DATE: Time-stamp: <>\n"
+      "#+CREATOR: " user-full-name 
+      "#+LANGUAGE: en\n"
+      "#+EXCLUDE_TAGS: noexport\n"
+      "#+OPTIONS: ':t *:t -:t ::t author:t creator:t date:t e:t email:t f:t H:3\n"
+      "#+OPTIONS: title:t |:t toc:nil\n"
+      "#+TAGS: noexport(n) draft(d) revise(r) complete(c)\n"
+      "#+FILETAGS: :WRITING:MANUSCRIPT" (tlc/format-tag-list (skeleton-read "File tags: "))  ":\n"
+      "#+CATEGORY: " (tlc/format-tag-list (skeleton-read "File categories: " "WRITING")) ":\n"
+      "#+SETUPFILE: ~/org-life/_setup.org\n"
+      "#+SETUPFILE: ~/org-life/_themes/org/theme-readtheorg-local.setup\n"
+      "\n"
+      "* Characters                                                       :noexport:\n"
+      "* Settings                                                         :noexport:\n"
+      "* Research                                                         :noexport:\n"
+      "* Journal                                                          :noexport:\n"
+      "* Dedication                                                    :frontmatter:\n"
+      "* Acknowledgements                                              :frontmatter:\n"
+      "* Prologue                                                       :mainmatter:\n"
+      "* Chapter 1                                                      :mainmatter:\n"
+      "* Endmatter                                                       :endmatter:\n"
+      "* Unfiled Scenes                                                   :noexport:\n")
 #+end_src
 
 Define a skeleton for org income/expense worksheets.
@@ -4145,6 +4198,25 @@ etc). If these are present, the correct one is loaded.
   (setq user-organisation "Tammy Makes Things")
 
   (provide 'settings-system-tmtlab)
+#+end_src
+
+***** System-Specific Settings - Work Laptop (LTXXXX)
+
+#+begin_src emacs-lisp :tangle settings-system-ltXXXX.el
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; System-specific settings - work laptop (LTXXXX)
+  ;; Tangled from init.org - do not modify directly
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (setq user-mail-address "tammy.cravit@azblue.com")
+  (setq user-full-name "Tammy Cravit")
+  (setq user-domain "azblue.com")
+  (setq user-organisation "Blue Cross Blue Shield of Arizona")
+  (setq user-login-name "CORP\\tcravi01")
+
+
+  (provide 'settings-system-ltXXXXX)
+
 #+end_src
 
 *** And we're done!

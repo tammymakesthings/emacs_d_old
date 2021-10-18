@@ -1,8 +1,8 @@
- -*- mode: org; fill-column: 78; -*-
+-*- mode: org; fill-column: 78; -*-
 #+TITLE: Emacs configuration file
 #+AUTHOR: Tammy Cravit
 #+EMAIL: tammymakesthings@gmail.com
-#+DATE: Time-stamp: <2021-09-21 10:53:00 CORP\tcravi01>
+#+DATE: Time-stamp: <2021-10-18 12:48:16 tammy>
 #+BABEL: :cache yes
 #+LATEX_HEADER: \usepackage{parskip}
 #+LATEX_HEADER: \usepackage{inconsolata}
@@ -230,6 +230,8 @@ Fix some exec-path-from-shell settings that produce spurious errors.
     '(exec-path-from-shell-warn-duration-millis 30000))
 #+end_src
 
+Add some variables to the safe-local-variables list.
+
 On Windows, Emacs starts up in the wrong directory. Fix that before we
 get too much farther.
 
@@ -295,6 +297,7 @@ And, now we're ready to install packages.
 (straight-use-package 'all-the-icons)
 (straight-use-package 'arduino-mode)
 (straight-use-package 'auctex)
+(straight-use-package 'reftex)
 (straight-use-package 'caml-mode)
 (straight-use-package 'cider)
 (straight-use-package 'cider-hydra)
@@ -434,6 +437,12 @@ http://www.emacswiki.org/emacs/InteractivelyDoThings
 
 #+begin_src emacs-lisp
 (global-set-key (kbd "C-x C-b") 'ibuffer)
+#+end_src
+
+***** Key Binding - Word Count
+
+#+begin_src emacs-lisp
+(global-set-key (kbd "C-x w") 'count-words)
 #+end_src
 
 ***** Smex - Easier execution of M-x commands.
@@ -631,7 +640,7 @@ The first one of these that's found will be used.
   ;; Select a good UI font
   (defvar tlc/frame-font-face nil "Font face for custom-set-faces")
   (defvar tlc/frame-font-size nil "Font size for custom-set-faces")
-
+  
   (if window-system
       (progn
         (cond
@@ -642,7 +651,10 @@ The first one of these that's found will be used.
          ((find-font (font-spec :name "Cascadia Code PL"))
           (progn
             (setq tlc/frame-font-face "Cascadia Code PL")
-            (setq tlc/frame-font-size 110)))
+            (if (eq system-type 'windows-nt)
+                (setq tlc/frame-font-size 110)
+              (setq tlc/frame-font-size 180))
+            ))
          ;; ((find-font (font-spec :name "Source Code Pro"))
          ;;  (progn
          ;;    (setq tlc/frame-font-face "Source Code Pro")
@@ -652,13 +664,13 @@ The first one of these that's found will be used.
          ;;    (setq tlc/frame-font-face "Fira Code")
          ;;    (setq tlc/frame-font-size 120)))
          )
-
+  
         (if (and tlc/frame-font-face tlc/frame-font-size)
             (progn
               (set-face-attribute 'default nil
                                   :font tlc/frame-font-face
                                   :height tlc/frame-font-size)))))
-
+  
   ;; (if (and window-system (string-equal tlc/frame-font-face "Fira Code"))
   ;;     (use-package fira-code-mode
   ;;       :load-path "git-lisp/fira-code-mode"
@@ -1686,7 +1698,7 @@ it.
 Set the default notes file.
 
 #+begin_src emacs-lisp
-  (setq org-default-notes-file (expand-file-name (concat org-directory "/codex.org")))
+  (setq org-default-notes-file (expand-file-name (concat org-directory "/personal.org")))
 #+end_src
 
 Set org indent settings.
@@ -1697,6 +1709,10 @@ Set org indent settings.
   (setq org-odd-levels-only t)
   (setq org-adapt-indentation t)
   (setq org-indent-indentation-per-level 2)
+  (setq org-blank-before-new-entry '(
+                                     (heading . nil) 
+                                     (plain-list-item . nil)))
+  (setq org-ascii-headline-spacing 0)
 #+end_src
 
 Enforce dependencies on TODOs and checkbox lists - the parent cannot be marked
@@ -2143,16 +2159,20 @@ Set general org-agenda options.
 #+begin_src emacs-lisp
   (setq org-deadline-warning-days 3)
   (setq org-agenda-skip-additional-timestamps-same-entry t)
-  (setq org-agenda-skip-scheduled-if-deadline-is-shown 'repeated-after-deadline)
   (setq org-todo-repeat-to-state "TODO")
-  (setq org-agenda-skip-scheduled-if-done t)
+  
   (setq org-agenda-skip-archived-trees t)1
   (setq org-agenda-skip-deadline-if-done t)
-;  (setq org-agenda-include-all-todo t)
+  (setq org-agenda-skip-scheduled-if-done t)
+  (setq org-agenda-skip-timestamp-if-done t)
+  
+  (setq org-agenda-skip-scheduled-if-deadline-is-shown 'repeated-after-deadline)
+  (setq org-agenda-skip-timestamp-if-deadline-is-shown t)
+  
   (setq org-agenda-include-diary t)
   (setq org-agenda-tags-todo-honor-ignore-options t)
   (setq org-agenda-todo-list-sublevels nil)
-
+  
   (add-hook 'org-agenda-mode-hook (lambda () (hl-line-mode 1)))
 #+end_src
 
@@ -2198,21 +2218,37 @@ exclude-days - it a list of days, events for those days are skipped"
 Now actually create the diary file.
 
 #+begin_src org text :tangle ~/.emacs.d/diary
+%%(diary-day-of-year)
+%%(diary-hebrew-date)
+
+%%(diary-hebrew-rosh-hodesh)
+%%(diary-hebrew-parasha)
+%%(diary-hebrew-sabbath-candles)
+%%(diary-hebrew-omer)
+
 %%(diary-sunrise) Sunrise in %s
 %%(diary-sunset) Sunrise in %s
 %%(org-lunar-phases)
-3/13/2018 Anniversary: Dave's passing
-4/23/2013 Anniversary: Started at Mindbody
-7/02/2020 Anniversary: Mindbody separation
-7/27/2020 Anniversary: Started at BCBSAZ
-11/2/1998 Anniversary: Transition
-4/19/1945 Birthday: Dad
-6/04/1959 Birthday: Cynthia
-8/04/1977 Birthday: Joanna
-10/21/1973 Birthday: Me
-10/22/2017 Birthday: Charlie
-11/03/1946 Birthday: Mom
-12/29/1940 Birthday: Irwin
+
+%%(diary-hebrew-yahrzeit 3 13 2018) Dave Lepek
+%%(diary-hebrew-yahrzeit 4 18 2012) Grandma
+%%(diary-hebrew-yahrzeit 12 29 2013) Grandpa
+%%(diary-hebrew-yahrzeit 4 20 2020) Uncle Irv
+
+%%(diary-anniversary 3 13 2018) Dave's passing
+%%(diary-anniversary 4 23 2013) Started at Mindbody
+%%(diary-anniversary 7 2 2020) Mindbody separation
+%%(diary-anniversary 7 27 2020) Started at BCBSAZ
+%%(diary-anniversary 11 2 1998) Transition
+%%(diary-anniversary 11 4 2015) Bottom Surgery
+%%(diary-anniversary 7 6 2021) Hospitalization - DKA
+%%(diary-remind '(diary-anniversary 4 19 1945) 7) Birthday: Dad
+%%(diary-remind '(diary-anniversary 6 04 1959) 7) Birthday: Cynthia
+%%(diary-remind '(diary-anniversary 8 04 1977) 7) Birthday: Joanna
+%%(diary-remind '(diary-anniversary 10 21 1973) 7) Birthday: Me
+%%(diary-remind '(diary-anniversary 10 22 2017) 7) Birthday: Charlie
+%%(diary-remind '(diary-anniversary 11 03 1946) 7) Birthday: Mom
+%%(diary-remind '(diary-anniversary 12 29 1940) 7) Birthday: Irwin
 6:00 Check Blood Sugar
 11:00 Check Blood Sugar
 17:00 Check Blood Sugar
@@ -2220,10 +2256,30 @@ Now actually create the diary file.
 6:30 Eat Breakfast
 11:15 Eat Lunch
 17:00 Eat Dinner
-%%(diary-cyclic 14 16 8 2019) Payday
+%%(diary-hebrew-birthday month day year)
+%%(diary-cyclic 14 6 30 2020) Payday
+%%(diary-cyclic 14 6 24 2020) Payday
 %%(diary-float 11 4 4) Thanksgiving
-%%(tlc/diary-weekday-entry "9:30am" "Collaboration Time")
-%%(tlc/diary-weekday-entry "10:00am" "Gatos de Datos DSU" nil '("Friday")
+Monday 9:30am Collaboration Time
+Tuesday 9:30am Collaboration Time
+Wednesday 9:30am Collaboration Time
+Thursday 9:30am Collaboration Time
+Friday 9:30am Collaboration Time
+Monday 10:00am Gatos de Datos DSU
+Tuesday10:00am Gatos de Datos DSU
+Wednesday 10:00am Gatos de Datos DSU
+Thursday 10:00am Gatos de Datos DSU
+#+end_src
+
+Define some display properties for the diary.
+
+#+begin_src emacs-lisp
+ (setq view-diary-entries-initially t
+       mark-diary-entries-in-calendar t)
+
+ (add-hook 'diary-display-hook 'fancy-diary-display)
+ (add-hook 'diary-list-entries-hook 'diary-sort-entries t)
+ (add-hook 'today-visible-calendar-hook 'calendar-mark-today)
 #+end_src
 
 Include sunrise and sunset in the diary. From [[https://orgmode.org/worg/org-hacks.html#org6abe7b1][here]], modified to do location
@@ -2788,165 +2844,162 @@ define helpers for accessing entries in this list.
 Define our templates for =org-capture=. There are lots of them.
 
 #+begin_src emacs-lisp
-;  (use-package org-chef :ensure t)
-
-  ;; (defun tlc/maybe-wrap-quotes (content &optional wrap-type)
-  ;;   "Wrap quoted text if provided."
-  ;;   (if content
-  ;;     (if (length (string-trim content))
-  ;;       (concat "#+begin_"
-  ;;               (downcase (or wrap-type "quote"))
-  ;;               "\n"
-  ;;               content 1
-  ;;               "\n"
-  ;;               "#+end_"
-  ;;               (downcase (or wrap-type "quote")))
-  ;;       ""
-  ;;       )))
-  (setq org-capture-templates
-        (doct '(
-                ("Tasks"
-                 :keys "t"
-                 :file "work.org" :olp ("Inbox")
-                 :type entry :prepend t
-                 :children (
-                            ("Respond"
-                             :keys "r"
-                             :template "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n")
-                            ("Meeting with %?"
-                             :keys "m"
-                             :file "journal.org"
-                             :type entry  :olp ("Journal")
-                             :datetree t :time-prompt t :tree-type week :prepend t
-                             :template "* Meeting with %? :MEETING:\n%U")
-                            ("Meeting: %?"
-                             :keys "M"
-                             :file "journal.org"
-                             :type entry  :olp ("Journal")
-                             :datetree t :time-prompt t :tree-type week :prepend t
-                             :template "* %<%Y-%m-%d> - %? :MEETING:\n%U")
-                            ("Task"
-                             :keys "t"
-                             :template "* TODO %?\n%U\n")
-                            ("Call"
-                             :keys "c"
-                             :file "journal.org"
-                             :type entry  :olp ("Journal")
-                             :datetree t :time-prompt t :tree-type week :prepend t
-                             :template "* Phone Call with %?\n%U")
-                            ("Note"
-                             :file "journal.org"
-                             :keys "n"
-                             :type entry :olp ("Journal")
-                             :datetree t :time-prompt t :tree-type week :prepend t
-                             :template "* %? :NOTE:\n%U\n"
-                            )
-                            ("Journal"
-                             :keys "j"
-                             :file "journal.org"
-                             :type entry  :olp ("Journal")
-                             :datetree t :time-prompt t :tree-type week :prepend t
-                             :template  "* %? :JOURNAL:\n%U\n"
-                           )
-                           ("Idea"
-                             :keys "i"
-                             :file "journal.org"
-                             :type entry  :olp ("Journal")
-                             :datetree t :time-prompt t :tree-type week :prepend t
-                             :template  "* %? :JOURNAL:\n%U\n"
-                           )
-                 ))
-
-                ("Writing Journal" :type entry
-                 :keys "w" :time-prompt t :tree-type week :prepend t :olp ("Journal")
-                 :template "* %<%Y-%m-%d>\n    %?"
-                 :children
-                 (
-                  ("AZ Mystery 1" :keys "a" :file "writing/az_mystery_1/az_mystery_1.org")
-                  ("Transformation 2ed" :keys "t" :file "writing/transformation_2e/transformation_2e.org")
-                  ("Short Stories" :keys "s" :file "writing_short_stories.org")
-                  ))
-
-                ("One-on-One Meeting"
-                 :keys "o"
-                 :file "journal.org" :type entry :olp ("Journal")
-                 :datetree t :tree-type week :prepend t :time-prompt t
-                 :template (
-                            "* One on One - %^{PROMPT} :ONEONONE:"
-                            "*** My Agenda Items [/]"
-                            "***** [ ] %?"
-                            "*** %^{PROMPT}'s Agenda Items"
-                            "*****"
-                            "*** Notes"
-                            "*** Next Actions"
-                            ))
-
-                ("Link" :keys "l" :file "codex.org" :template "* %?\n%U\n")
-
-                ("To Buy" :keys "B" :file "personal.org" :headline "To Buy"
-                 :template "* TODO Buy %c\n%U\n")
-
-                ("Errand" :keys "E" :file "personal.org" :headline "Errands"
-                 :template "* TODO%c\n%U\n")
-
-                ("Someday" :keys "S" :file "someday.org" :headline "Inbox"
-                 :template "* TODO%c\n%U\n")
-
-              ("Cookbook"
-                  :keys "c" :file "recipes.org" :type entry
-                  :template "%(org-chef-get-recipe-from-url)"
-                  :empty-lines 1)
-              ("Cookbook (manual)"
-                  :keys "C" :file "recipes.org" :type entry
-                  :template
-                  (
-                      "* %^{Recipe title: }"
-                      ":PROPERTIES:"
-                      ":source-url:"
-                      ":servings:"
-                      ":prep-time:"
-                      ":cook-time:"
-                      ":ready-in:"
-                      ":END:"
-                      "*** Ingredients"
-                      "   %?"
-                      "*** Directions"
-                      ""
-                      ""
+  ;  (use-package org-chef :ensure t)
+  
+    ;; (defun tlc/maybe-wrap-quotes (content &optional wrap-type)
+    ;;   "Wrap quoted text if provided."
+    ;;   (if content
+    ;;     (if (length (string-trim content))
+    ;;       (concat "#+begin_"
+    ;;               (downcase (or wrap-type "quote"))
+    ;;               "\n"
+    ;;               content 1
+    ;;               "\n"
+    ;;               "#+end_"
+    ;;               (downcase (or wrap-type "quote")))
+    ;;       ""
+    ;;       )))
+    (setq org-capture-templates
+          (doct '(
+                  ("Tasks"
+                   :keys "t"
+                   :file "work.org" :olp ("Inbox")
+                   :type entry :prepend t
+                   :empty-lines 0
+                   :children (
+                              ("Respond"
+                               :keys "r" :empty-lines 0
+                               :template "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n")
+                              ("Meeting with %?"
+                               :keys "m"
+                               :type entry  :olp ("Journal") :empty-lines 0
+                               :datetree t :time-prompt t :tree-type week :prepend t
+                               :template "* Meeting with %? :MEETING:\n%U")
+                              ("Meeting: %?"
+                               :keys "M"
+                               :type entry  :olp ("Journal") :empty-lines 0
+                               :datetree t :time-prompt t :tree-type week :prepend t
+                               :template "* %<%Y-%m-%d> - %? :MEETING:\n%U")
+                              ("Call"
+                               :keys "c"
+                               :type entry  :olp ("Journal") :empty-lines 0
+                               :datetree t :time-prompt t :tree-type week :prepend t
+                               :template "* Phone Call with %?\n%U")
+                              ("Note"
+                               :keys "n"
+                               :type entry :olp ("Journal") :empty-lines 0
+                               :datetree t :time-prompt t :tree-type week :prepend t
+                               :template "* %? :NOTE:\n%U"
+                              )
+                              ("Journal"
+                               :keys "j"
+                               :type entry  :olp ("Journal") :empty-lines 0
+                               :datetree t :time-prompt t :tree-type week :prepend t
+                               :template  "* %? :JOURNAL:\n%U"
+                             )
+                             ("Idea"
+                               :keys "i"
+                               :file "journal.org"
+                               :datetree t :time-prompt t :tree-type week :prepend t
+                               :empty-lines 0
+                               :template  "* %? :JOURNAL:\n%U"
+                             )
+                   ))
+  
+                  ("Writing Journal" :type entry
+                   :keys "w" :time-prompt t :tree-type week :prepend t :olp ("Journal")
+                   :template "* %<%Y-%m-%d>\n    %?"
+                   :empty-lines 0
+                   :children
+                   (
+                    ("AZ Mystery 1" :keys "a" :file "writing/az_mystery_1/az_mystery_1.org")
+                    ("Transformation 2ed" :keys "t" :file "writing/transformation_2e/transformation_2e.org")
+                    ("Short Stories" :keys "s" :file "writing_short_stories.org")
+                    ))
+  
+                  ("One-on-One Meeting"
+                   :keys "o"
+                   :file "work.org" :type entry :olp ("One-on-Ones")
+                   :datetree t :tree-type week :prepend t :time-prompt t 
+                   :empty-lines 0
+                   :template (
+                              "* One on One - %^{WHO|Saima|Dena|Kevin|Rachel} - %<%Y-%m-%d> :ONEONONE:))"
+                              "*** My Agenda Items [/]"
+                              "    - [ ] %?"
+                              "*** Notes"
+                              "    - %U"
+                              "*** Next Actions"
+                              "***** TODO Schedule next 1:1"
+                              "      SCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+1d\"))" 
+                              ))
+  
+                  ("Link" :keys "l" :file "codex.org" 
+                   :template "* %?\n%U\n" :empty-lines 0)
+  
+                  ("To Buy" :keys "B" :file "personal.org" :headline "To Buy"
+                   :template "* TODO Buy %c\n%U\n" :empty-lines 0)
+  
+                  ("Errand" :keys "E" :file "personal.org" :headline "Errands"
+                   :template "* TODO%c\n%U\n" :empty-lines 0)
+  
+                  ("Someday" :keys "S" :file "someday.org" :headline "Inbox"
+                   :template "* TODO%c\n%U\n" :empty-lines 0)
+  
+                ("Cookbook"
+                    :keys "c" :file "recipes.org" :type entry
+                    :template "%(org-chef-get-recipe-from-url)"
+                    :empty-lines 1)
+                ("Cookbook (manual)"
+                    :keys "C" :file "recipes.org" :type entry :empty-lines 0
+                    :template
+                    (
+                        "* %^{Recipe title: }"
+                        ":PROPERTIES:"
+                        ":source-url:"
+                        ":servings:"
+                        ":prep-time:"
+                        ":cook-time:"
+                        ":ready-in:"
+                        ":END:"
+                        "*** Ingredients"
+                        "   %?"
+                        "*** Directions"
+                        ""
+                        ""
+                    )
                   )
-                )
-
-                ("Protocol" :keys "p" :file "codex.org"
-                 :template ("* [[%:link][%:description]]"
-                            ""
-                            "Captured at: %U"
-                            ""
-                            "#+begin_quote"
-                            "%i"
-                            "#+end_quote"
-                            ;;"%(tlc/maybe-wrap-quotes \"%i\")"
-                            ))
-
-                ("Protocol Link" :keys "L" :file "codex.org"
-                 :template ("* %? [[%:link][%:description]]"
-                            ""
-                            "Captured at: %U"))
-
-                ("Habit"
-                 :keys "h" :file "master.org" :headline "Habits"
-                 :template (
-                            "* NEXT %?"
-                            "  SCHEDULED: <%<%Y-%m-%d %a .+1d>>"
-                            "  :PROPERTIES:"
-                            "  :CREATED: %U"
-                            "  :STYLE: habit"
-                            "  :REPEAT_TO_STATE: NEXT"
-                            "  :LOGGING: DONE(!)"
-                            "  :END:"
-                            "  %U"
-                            )
-                 )
-                )))
+  
+                  ("Protocol" :keys "p" :file "codex.org" :empty-lines 0
+                   :template ("* [[%:link][%:description]]"
+                              ""
+                              "Captured at: %U"
+                              ""
+                              "#+begin_quote"
+                              "%i"
+                              "#+end_quote"
+                              ;;"%(tlc/maybe-wrap-quotes \"%i\")"
+                              ))
+  
+                  ("Protocol Link" :keys "L" :file "codex.org" :empty-lines 0
+                   :template ("* %? [[%:link][%:description]]"
+                              ""
+                              "Captured at: %U"))
+  
+                  ("Habit" :empty-lines 0
+                   :keys "h" :file "master.org" :headline "Habits"
+                   :template (
+                              "* NEXT %?"
+                              "  SCHEDULED: <%<%Y-%m-%d %a .+1d>>"
+                              "  :PROPERTIES:"
+                              "  :CREATED: %U"
+                              "  :STYLE: habit"
+                              "  :REPEAT_TO_STATE: NEXT"
+                              "  :LOGGING: DONE(!)"
+                              "  :END:"
+                              "  %U"
+                              )
+                   )
+                  )))
 #+end_src
 
 ******* Align tags after capturing
@@ -3125,110 +3178,111 @@ outlines. It can be disabled by setting =tlc/enable-org-custom-return=
 to =nil=.
 
 #+begin_src emacs-lisp
-  (defun unpackaged/org-element-descendant-of (type element)
-    "Return non-nil if ELEMENT is a descendant of TYPE.
-  TYPE should be an element type, like `item' or `paragraph'.
-  ELEMENT should be a list like that returned by `org-element-context'."
-    ;; MAYBE: Use `org-element-lineage'.
-    (when-let* ((parent (org-element-property :parent element)))
-      (or (eq type (car parent))
-          (unpackaged/org-element-descendant-of type parent))))
-
-  (defvar tlc/enable-org-custom-return nil
-    "Set to true to enable scimax/org-return functionality")
-
-  (defun unpackaged/org-return-dwim (&optional default)
-    "A helpful replacement for `org-return'.  With prefix, call `org-return'.
-
-  On headings, move point to position after entry content.  In
-  lists, insert a new item or end the list, with checkbox if
-  appropriate.  In tables, insert a new row or end the table.
-
-  You can disable the custom behavior globally by setting the variable
-  `tlc/org-enable-custom-return` to a nil value.
-  "
-    (interactive "P")
-    (if (or default (not tlc/enable-org-custom-return))
-        (org-return)
-      (cond
-       ;; Act depending on context around point.
-
-       ((eq 'link (car (org-element-context)))
-        ;; Link: Open it.
-        (org-open-at-point-global))
-
-       ((org-at-heading-p)
-
-        ;; Heading: Move to position after entry content.
-        ;; NOTE: This is probably the most interesting feature of this function.
-        (let ((heading-start (org-entry-beginning-position)))
-          (goto-char (org-entry-end-position))
-          (cond ((and (org-at-heading-p)
-                      (= heading-start (org-entry-beginning-position)))
-                 ;; Entry ends on its heading; add newline after
-                 (end-of-line)
-                 (insert "\n\n"))
+    (defun unpackaged/org-element-descendant-of (type element)
+      "Return non-nil if ELEMENT is a descendant of TYPE.
+    TYPE should be an element type, like `item' or `paragraph'.
+    ELEMENT should be a list like that returned by `org-element-context'."
+      ;; MAYBE: Use `org-element-lineage'.
+      (when-let* ((parent (org-element-property :parent element)))
+        (or (eq type (car parent))
+            (unpackaged/org-element-descendant-of type parent))))
+    
+    (defvar tlc/enable-org-custom-return nil
+      "Set to true to enable scimax/org-return functionality")
+    
+    (defun unpackaged/org-return-dwim (&optional default)
+      "A helpful replacement for `org-return'.  With prefix, call `org-return'.
+    
+    On headings, move point to position after entry content.  In
+    lists, insert a new item or end the list, with checkbox if
+    appropriate.  In tables, insert a new row or end the table.
+    
+    You can disable the custom behavior globally by setting the variable
+    `tlc/org-enable-custom-return` to a nil value.
+    "
+      (interactive "P")
+      (if (or default (not tlc/enable-org-custom-return))
+          (org-return)
+        (cond
+         ;; Act depending on context around point.
+    
+         ((eq 'link (car (org-element-context)))
+          ;; Link: Open it.
+          (org-open-at-point-global))
+    
+         ((org-at-heading-p)
+    
+          ;; Heading: Move to position after entry content.
+          ;; NOTE: This is probably the most interesting feature of this function.
+          (let ((heading-start (org-entry-beginning-position)))
+            (goto-char (org-entry-end-position))
+            (cond ((and (org-at-heading-p)
+                        (= heading-start (org-entry-beginning-position)))
+                   ;; Entry ends on its heading; add newline after
+                   (end-of-line)
+                   (insert "\n\n"))
+                  (t
+                   ;; Entry ends after its heading; back up
+                   (forward-line -1)
+                   (end-of-line)
+                   (when (org-at-heading-p)
+                     ;; At the same heading
+                     (forward-line)
+                     (insert "\n")
+                     (forward-line -1))
+                   ;; FIXME: looking-back is supposed to be called with more arguments.
+                   (while (not (looking-back (rx (repeat 3 (seq (optional blank) "\n")))))
+                     (insert "\n"))
+                   (forward-line -1)))))
+    
+         ((org-at-item-checkbox-p)
+          ;; Checkbox: Insert new item with checkbox.
+          (org-insert-todo-heading nil))
+    
+         ((org-in-item-p)
+          ;; Plain list.  Yes, this gets a little complicated...
+          (let ((context (org-element-context)))
+            (if (or (eq 'plain-list (car context))  ; First item in list
+                    (and (eq 'item (car context))
+                         (not (eq (org-element-property :contents-begin context)
+                                  (org-element-property :contents-end context))))
+                    (unpackaged/org-element-descendant-of 'item context))  ; Element in list item, e.g. a link
+                ;; Non-empty item: Add new item.
+                (org-insert-item)
+              ;; Empty item: Close the list.
+              ;; TODO: Do this with org functions rather than operating on the text. Can't seem to find the right function.
+              (delete-region (line-beginning-position) (line-end-position))
+              (insert "\n"))))
+    
+         ((when (fboundp 'org-inlinetask-in-task-p)
+            (org-inlinetask-in-task-p))
+          ;; Inline task: Don't insert a new heading.
+          (org-return))
+    
+         ((org-at-table-p)
+          (cond ((save-excursion
+                   (beginning-of-line)
+                   ;; See `org-table-next-field'.
+                   (cl-loop with end = (line-end-position)
+                            for cell = (org-element-table-cell-parser)
+                            always (equal (org-element-property :contents-begin cell)
+                                          (org-element-property :contents-end cell))
+                            while (re-search-forward "|" end t)))
+                 ;; Empty row: end the table.
+                 (delete-region (line-beginning-position) (line-end-position))
+                 (org-return))
                 (t
-                 ;; Entry ends after its heading; back up
-                 (forward-line -1)
-                 (end-of-line)
-                 (when (org-at-heading-p)
-                   ;; At the same heading
-                   (forward-line)
-                   (insert "\n")
-                   (forward-line -1))
-                 ;; FIXME: looking-back is supposed to be called with more arguments.
-                 (while (not (looking-back (rx (repeat 3 (seq (optional blank) "\n")))))
-                   (insert "\n"))
-                 (forward-line -1)))))
-
-       ((org-at-item-checkbox-p)
-        ;; Checkbox: Insert new item with checkbox.
-        (org-insert-todo-heading nil))
-
-       ((org-in-item-p)
-        ;; Plain list.  Yes, this gets a little complicated...
-        (let ((context (org-element-context)))
-          (if (or (eq 'plain-list (car context))  ; First item in list
-                  (and (eq 'item (car context))
-                       (not (eq (org-element-property :contents-begin context)
-                                (org-element-property :contents-end context))))
-                  (unpackaged/org-element-descendant-of 'item context))  ; Element in list item, e.g. a link
-              ;; Non-empty item: Add new item.
-              (org-insert-item)
-            ;; Empty item: Close the list.
-            ;; TODO: Do this with org functions rather than operating on the text. Can't seem to find the right function.
-            (delete-region (line-beginning-position) (line-end-position))
-            (insert "\n"))))
-
-       ((when (fboundp 'org-inlinetask-in-task-p)
-          (org-inlinetask-in-task-p))
-        ;; Inline task: Don't insert a new heading.
-        (org-return))
-
-       ((org-at-table-p)
-        (cond ((save-excursion
-                 (beginning-of-line)
-                 ;; See `org-table-next-field'.
-                 (cl-loop with end = (line-end-position)
-                          for cell = (org-element-table-cell-parser)
-                          always (equal (org-element-property :contents-begin cell)
-                                        (org-element-property :contents-end cell))
-                          while (re-search-forward "|" end t)))
-               ;; Empty row: end the table.
-               (delete-region (line-beginning-position) (line-end-position))
-               (org-return))
-              (t
-               ;; Non-empty row: call `org-return'.
-               (org-return))))
-       (t
-        ;; All other cases: call `org-return'.
-        (org-return)))))
-
-  (require 'org-inlinetask)
-
-  (setq tlc/enable-org-custom-return t)
-  (define-key org-mode-map (kbd "RET") 'unpackaged/org-return-dwim)
+                 ;; Non-empty row: call `org-return'.
+                 (org-return))))
+         (t
+          ;; All other cases: call `org-return'.
+          (org-return)))))
+    
+    (require 'org-inlinetask)
+    
+    (setq tlc/enable-org-custom-return nil)
+    (if tlc/enable-org-custom-return
+        (define-key org-mode-map (kbd "RET") 'unpackaged/org-return-dwim))
 #+end_src
 
 ***** Org-Babel Settings
@@ -3717,167 +3771,6 @@ Define a helper function to create the publishing project and necessary helpers.
 #+begin_src emacs-lisp :tangle no
 #+end_src
 
-******* Trans/Formation 2nd Ed Publishing Settings
-
-Define helper functions to publish the three pieces of the book (front
-matter, main matter, end matter) and rename them appropriately after
-output.
-
-#+begin_src emacs-lisp
-  (defun tlc/org-publish-transformation2e-fm (plist filename pubdir)
-    (tlc/org-publish-and-rename-latex
-     (concat org-dir "/transformation_2e/tex/transformation_2e.tex")
-     (concat org-dir "/transformation_2e/tex/transformation_2e_frontmatter.tex")
-     plist filename pubdir))
-  
-  (defun tlc/org-publish-transformation2e-main (plist filename pubdir)
-    (tlc/org-publish-and-rename-latex
-     (concat org-dir "/transformation_2e/tex/transformation_2e.tex")
-     (concat org-dir "/transformation_2e/tex/transformation_2e_main.tex")
-     plist filename pubdir))
-  
-  (defun tlc/org-publish-transformation2e-em (plist filename pubdir)
-    (tlc/org-publish-and-rename-latex
-     (concat org-dir "/transformation_2e/tex/transformation_2e.tex")
-     (concat org-dir "/transformation_2e/tex/transformation_2e_endmatter.tex")
-     plist filename pubdir))
-#+end_src
-
-Define the =org-publish-project-alist= to publish the book files for
-this project.
-
-#+begin_src emacs-lisp
-  (add-to-list 'org-publish-project-alist
-               '("transformation2e"
-                 :components ( "transformation2e_fm"
-                               "transformation2e_main"
-                               "transformation2e_em")) t)
-
-  (add-to-list 'org-publish-project-alist
-               '("transformation2e_fm"
-                 :base-directory (concat org-dir "/transformation_2e")
-                 :publishing-directory (concat org-dir "/transformation_2e/tex")
-                 :publishing-function tlc/org-publish-transformation2e-fm
-                 :select-tags ("frontmatter")
-                 :with-latex t :latex-class "pub_book_fmem" :body-only t) t)
-
-  (add-to-list 'org-publish-project-alist
-               '("transformation2e_main"
-                 :base-directory (concat org-dir "/transformation_2e")
-                 :publishing-directory (concat org-dir "/transformation_2e/tex")
-                 :publishing-function tlc/org-publish-transformation2e-main
-                 :select-tags ("mainmatter")
-                 :with-latex t :latex-class "pub_book" :body-only t) t)
-
-  (add-to-list 'org-publish-project-alist
-               '("transformation2e_em"
-                 :base-directory (concat org-dir "/transformation_2e")
-                 :publishing-directory (concat org-dir "/transformation_2e/tex")
-                 :publishing-function tlc/org-publish-transformation2e-em
-                 :select-tags ("endmatter")
-                 :with-latex t :latex-class "pub_book_fmem" :body-only t) t)
-#+end_src
-******* Arizona Mystery 1 Publishing Settings
-
-Define helper functions to publish the three pieces of the book (front
-matter, main matter, end matter) and rename them appropriately after
-output.
-
-#+begin_src emacs-lisp
-  (defun tlc/org-publish-azmystery1-fm (plist filename pubdir)
-    (tlc/org-publish-and-rename-latex
-     (concat org-dir "/az_mystery_1/tex/az_mystery_1.tex")
-     (concat org-dir "/az_mystery_1/tex/az_mystery_1_frontmatter.tex")
-     plist filename pubdir))
-  
-  (defun tlc/org-publish-azmystery1-main (plist filename pubdir)
-    (tlc/org-publish-and-rename-latex
-     (concat org-dir "/az_mystery_1/tex/az_mystery_1.tex")
-     (concat org-dir "/az_mystery_1/tex/az_mystery_1_main.tex")
-     plist filename pubdir))
-  
-  (defun tlc/org-publish-azmystery1-em (plist filename pubdir)
-    (tlc/org-publish-and-rename-latex
-     (concat org-dir "/az_mystery_1/tex/az_mystery_1.tex")
-     (concat org-dir "/az_mystery_1/tex/az_mystery_1_endmatter.tex")
-     plist filename pubdir))
-#+end_src
-
-Define the =org-publish-project-alist= to publish the book files for
-this project.
-
-#+begin_src emacs-lisp
-  (add-to-list 'org-publish-project-alist
-               '("azmystery1"
-                 :components ( "azmystery1_fm"
-                               "azmystery1_main"
-                               "azmystery1_em")) t)
-
-  (add-to-list 'org-publish-project-alist
-               '("azmystery1_fm"
-                 :base-directory (concat org-dir "/az_mystery_1")
-                 :publishing-directory (concat org-dir "/az_mystery_1/tex")
-                 :publishing-function tlc/org-publish-azmystery1-fm
-                 :select-tags ("frontmatter")
-                 :with-latex t :latex-class "pub_book_fmem" :body-only t) t)
-
-  (add-to-list 'org-publish-project-alist
-               '("azmystery1_main"
-                 :base-directory (concat org-dir "/az_mystery_1")
-                 :publishing-directory (concat org-dir "/az_mystery_1/tex")
-                 :publishing-function tlc/org-publish-azmystery1-main
-                 :select-tags ("mainmatter")
-                 :with-latex t :latex-class "pub_book" :body-only t) t)
-
-  (add-to-list 'org-publish-project-alist
-               '("azmystery1_em"
-                 :base-directory (concat org-dir "/az_mystery_1")
-                 :publishing-directory (concat org-dir "/az_mystery_1/tex")
-                 :publishing-function tlc/org-publish-azmystery1-em
-                 :select-tags ("endmatter")
-                 :with-latex t :latex-class "pub_book_fmem" :body-only t) t)
-#+end_src
-
-******* Tammy Makes Things Blog Publish Settings
-
-#+begin_src emacs-lisp
-  (add-to-list 'org-publish-project-alist
-               '("tammymakesthings"
-                   :components
-                    (
-                       "tammymakesthings_posts"
-                       "tammymakesthings_projects"
-                    )
-                  )
-                  t)
-  (add-to-list 'org-publish-project-alist
-               '("tammymakesthings_posts"
-                   :base-directory "~/tammymakesthings.github.io/org/posts"
-                   :base-extension "org"
-                   :publishing-directory "~/tammymakesthings.github.io/_posts"
-                   :recursive t
-                   :publishing-function org-html-publish-to-html
-                   :section-numbers nil
-                   :headline-levels 4
-                   :html-extension "html"
-                   :body-only t
-                   )
-                 t)
-  (add-to-list 'org-publish-project-alist
-               '("tammymakesthings_projects"
-                   :base-directory "~/tammymakesthings.github.io/org/projects"
-                   :base-extension "org"
-                   :publishing-directory "~/tammymakesthings.github.io/_projects"
-                   :recursive t
-                   :publishing-function org-html-publish-to-html
-                   :section-numbers nil
-                   :headline-levels 4
-                   :html-extension "html"
-                   :body-only t
-                  )
-                t)
-#+end_src
-
 ***** TaskJuggler Integration
 
 Set up org taskjuggler integrations.
@@ -4032,8 +3925,72 @@ Configure AuCTeX integration.
       (setq TeX-parse-self t)
       (setq-default TeX-master nil)
       (setq preview-preserve-counters t)
+      (setq LaTeX-section-hook 
+            '(LaTeX-section-heading
+              LaTeX-section-title
+              LaTeX-section-toc
+              LaTeX-section-section
+              LaTeX-section-label))
+      (setq LaTeX-section-label '(
+                                  ("part" . "part:")
+                                  ("chapter" . "ch:")
+                                  ("section" . "sec:")
+                                  ("subsection" . "ssec:")
+                                  ("subsubsection" . "sssec:")))
+      (setq LaTeX-equation-label "eqn:")
+      (setq LaTeX-eqnarray-label "eqns:")
+      (setq LaTeX-amsmath-label "mth:")
+      (setq LaTeX-figure-label "fig:")
+      (setq LaTeX-table-label "tbl:")
+      (setq LaTeX-syntactic-comments t)
+      (add-hook 'LaTeX-mode-hook (lambda () (TeX-fold-mode 1)))
       ))
 #+end_src
+
+Turn on auto-fill for TeX and LaTeX files.
+  
+#+begin_src emacs-lisp
+  (defun tlc/tex-mode-hook ()
+    (progn
+      (auto-fill-mode t)
+      (setq auto-fill-function 
+            (lambda () 
+              (if (looking-at "\n") 
+                  (do-auto-fill) 
+                (LaTeX-fill-paragraph))))))
+  
+  
+  (add-hook 'TeX-mode-hook 'tlc/tex-mode-hook)
+  (add-hook 'LaTeX-mode-hook 'tlc/tex-mode-hook)
+#+end_src
+
+Add Arara as a LaTeX command.
+
+#+begin_src emacs-lisp
+  (eval-after-load "tex"
+    (progn
+      (add-to-list 'TeX-command-list
+                   '("Arara" "arara %s" TeX-run-command t t :help "Run arara") t)
+      (setq TeX-command-default "Arara")
+    ))
+#+end_src
+
+Correlate TeX files and source with synctex.
+
+#+begin_src emacs-lisp
+  (setq TeX-source-correlate-method 'synctex)
+#+end_src
+
+Configure RefTeX.
+
+#+begin_src emacs-lisp
+  (require 'reftex)
+  
+  (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+  (setq reftex-plug-into-AUCTeX t)
+  (setq reftex-default-bibliography (expand-file-name "~/texmf/bibtex/bib/tammymakesthings.bib"))
+#+end_src
+
 
 *** Gnu Server
 #+begin_src emacs-lisp :tangle yes
@@ -4203,7 +4160,7 @@ etc). If these are present, the correct one is loaded.
   (let ((system-file 
          (concat user-emacs-directory 
                  "settings-system-" 
-                 (replace-regexp-in-string "\\.local" "" (downcase system-name)) 
+                 (replace-regexp-in-string "\\.local" "" (downcase (system-name))) 
                  ".el")))
     (if (file-exists-p system-file)
         (progn
@@ -4265,3 +4222,6 @@ etc). If these are present, the correct one is loaded.
 #+begin_src emacs-lisp
   (message "init.el fully executed")
 #+end_src
+
+
+
